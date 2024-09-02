@@ -1,0 +1,24 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "Backend PI 2 ",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc"
+    },
+    "keywords": [
+        "PUCCAMPINAS",
+        "PI2",
+        "BACKEND",
+        "NODE",
+        "TYPESCRIPT",
+        "WEB"
+    ],
+    "author": "Gabriel Capovilla",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^22.5.2",
+        "clear": "^0.1.0",
+        "typescript": "^5.5.4"
+    }
+}
