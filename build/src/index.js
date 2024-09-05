@@ -1,2 +1,2 @@
 "use strict";
-console.log("Hello World!");
+console.log("O início da PUCBET!");

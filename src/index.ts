@@ -1,2 +1,1 @@
-const n: number = 100;
-console.log(n);
+console.log("O início da PUCBET!");
