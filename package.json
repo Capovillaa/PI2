@@ -2,6 +2,9 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend PI 2 ",
+  "dependencies": {
+    "mysql": "^2.18.1"
+  },
   "main": "index.js",
   "scripts": {
     "build": "tsc"
@@ -17,6 +20,7 @@
   "author": "Gabriel Capovilla",
   "license": "ISC",
   "devDependencies": {
+    "@types/mysql": "2.15.26",
     "@types/node": "^22.5.4",
     "clear": "^0.1.0",
     "typescript": "^5.5.4"
