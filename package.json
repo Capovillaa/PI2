@@ -21,8 +21,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/mysql": "2.15.26",
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.5.5",
     "clear": "^0.1.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.2"
   }
 }
