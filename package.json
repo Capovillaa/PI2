@@ -1,24 +1,24 @@
 {
-  "name": "backend",
+  "name": "express-template",
   "version": "1.0.0",
-  "description": "Backend PI 2 ",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc --build --clean",
+    "start": "node ./build/src/server.js",
+    "dev": "nodemon src/server.ts"
   },
-  "keywords": [
-    "PUCCAMPINAS",
-    "PI2",
-    "BACKEND",
-    "NODE",
-    "TYPESCRIPT",
-    "WEB"
-  ],
-  "author": "Gabriel Capovilla",
+  "keywords": [],
+  "author": "",
   "license": "ISC",
+  "description": "",
   "devDependencies": {
-    "@types/node": "^22.5.4",
-    "clear": "^0.1.0",
-    "typescript": "^5.5.4"
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.4",
+    "nodemon": "^3.1.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
   }
 }
