@@ -8,6 +8,7 @@ export namespace FinancialManager{
     }
 
     let walletDatabase: Wallet[] = [];
+
     const w1: Wallet = {
         ownerEmail : "pedro@puca.edu.br",
         balance: 0
@@ -33,6 +34,6 @@ export namespace FinancialManager{
                 //ser feliz nessa semana e implementar isso.
             }
 
-
+            
     
 }
