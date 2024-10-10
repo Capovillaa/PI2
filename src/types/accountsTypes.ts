@@ -1,6 +1,6 @@
 export type UserAccount = {
     name:string;
     email:string;
-    password:string;
+    password:Promise<string>;
     birthdate:string; 
 };
