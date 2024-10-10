@@ -3,7 +3,7 @@ import { UserAccount } from "../types/accountsTypes";
 import bcrypt from 'bcryptjs';
 
 export namespace AccountsManager {
-    
+
     let accountsDatabase: UserAccount[] = [];
 
     function saveNewAccount(ua: UserAccount) : number{
@@ -24,20 +24,25 @@ export namespace AccountsManager {
         }
         return passwordRegex.test(password);
     }
-
+    async function hashPassword(password: string) :Promise<string>{
+        const hashedPassword = await bcrypt.hash(password,10);
+        return hashedPassword;
+    }
     export const signUpRouteHandler: RequestHandler = (req: Request, res: Response) => {
         
         const pName = req.get('name');
         const pEmail = req.get('email');
-        const pPassword = req.get('password');//fazer o hash
+        const pPassword = req.get('password');
         const pBirthdate = req.get('birthdate');//verificar data dps 
         
         if(pName && pEmail && pPassword && pBirthdate){
             if(verifyEmail(pEmail) && verifyPassword(pPassword)){
+
+                const hashedPassword = hashPassword(pPassword);
                 const newAccount: UserAccount = {
                     name: pName,
                     email: pEmail, 
-                    password: pPassword,
+                    password: hashedPassword,
                     birthdate: pBirthdate
                 }
                 const ID = saveNewAccount(newAccount);
