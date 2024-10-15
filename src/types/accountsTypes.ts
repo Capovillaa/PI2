@@ -1,6 +1,7 @@
 export type UserAccount = {
-    name:string;
+    //id:number | undefined;
+    completeName:string;
     email:string;
-    password:Promise<string>;
+    password:string | undefined;
     birthdate:string; 
 };

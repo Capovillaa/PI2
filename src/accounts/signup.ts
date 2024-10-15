@@ -24,11 +24,8 @@ export namespace AccountsManager {
         }
         return passwordRegex.test(password);
     }
-    async function hashPassword(password: string) :Promise<string>{
-        const hashedPassword = await bcrypt.hash(password,10);
-        return hashedPassword;
-    }
-    export const signUpRouteHandler: RequestHandler = (req: Request, res: Response) => {
+
+    export const signUpRouteHandler: RequestHandler = async (req: Request, res: Response) => {
         
         const pName = req.get('name');
         const pEmail = req.get('email');
@@ -38,9 +35,9 @@ export namespace AccountsManager {
         if(pName && pEmail && pPassword && pBirthdate){
             if(verifyEmail(pEmail) && verifyPassword(pPassword)){
 
-                const hashedPassword = hashPassword(pPassword);
+                const hashedPassword = await bcrypt.hash(pPassword,10);
                 const newAccount: UserAccount = {
-                    name: pName,
+                    completeName: pName,
                     email: pEmail, 
                     password: hashedPassword,
                     birthdate: pBirthdate
@@ -59,3 +56,6 @@ export namespace AccountsManager {
     }
 
 }
+
+//Verificar data e conectar com o banco.
+//Criar um Wallet no Oracle

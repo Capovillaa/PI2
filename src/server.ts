@@ -1,7 +1,7 @@
 import express from "express";
 import {Request, Response, Router} from "express";
-import { AccountsManager } from "./accounts/accounts";
-import { FinancialManager } from "./financial/financial";
+import { AccountsManager } from "./accounts/signup";
+import { FinancialManager } from "./financial/addfunds";
 
 const port = 3000; 
 const server = express();
@@ -15,7 +15,7 @@ routes.get('/', (req: Request, res: Response)=>{
 
 routes.put('/signUp', AccountsManager.signUpRouteHandler);
 
-routes.post('/getWalletBalance',FinancialManager.getWalletBalanceHandler);
+routes.post('/addFunds', FinancialManager.addFundsHandler);
 
 server.use(routes);
 
