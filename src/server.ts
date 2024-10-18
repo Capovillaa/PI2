@@ -1,6 +1,6 @@
 import express from "express";
 import {Request, Response, Router} from "express";
-import { AccountsManager } from "./accounts/signup";
+import { AccountsManager } from "./accounts/accounts";
 import { FinancialManager } from "./financial/addfunds";
 
 const port = 3000; 
@@ -13,7 +13,7 @@ routes.get('/', (req: Request, res: Response)=>{
     res.send('Acesso não permitido. Rota default não disponivel.');
 });
 
-routes.put('/signUp', AccountsManager.signUpRouteHandler);
+routes.put('/signUp', AccountsManager.signUpHandler);
 
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 
