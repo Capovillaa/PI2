@@ -7,12 +7,6 @@ dotenv.config();
 
 export namespace AccountsManager {
 
-    let accountsDatabase: UserAccount[] = [];
-
-    function saveNewAccount(ua: UserAccount) : number{
-        accountsDatabase.push(ua);
-        return accountsDatabase.length;
-    }
 
     function verifyEmail(email: string) :boolean{
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,6 +20,14 @@ export namespace AccountsManager {
             return false;
         }
         return passwordRegex.test(password);
+    }
+
+    /*
+    let accountsDatabase: UserAccount[] = [];
+
+    function saveNewAccount(ua: UserAccount) : number{
+        accountsDatabase.push(ua);
+        return accountsDatabase.length;
     }
 
     export const signUpHandlerr: RequestHandler = async (req: Request, res: Response) => {
@@ -57,34 +59,64 @@ export namespace AccountsManager {
             res.send("Parâmetros inválidos ou faltantes.");
         }
     }
+    */
 
-    async function signUp(completeName:string, email:string, password:string) {
+    async function signUp(email:string, password:string, completeName:string) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
 
-        let connection = await OracleDB.getConnection({
-            user: process.env.ORACLE_USER,
-            password: process.env.ORACLE_PASSWORD,
-            connectString: process.env.ORACLE_CONN_STR
-        });
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
 
-        let insertion = await connection.execute(
-            "INSERT INTO ACCOUNTS(ID,EMAIL,PASSWORD,COMPLETE_NAME,TOKEN)VALUES(SEQ_ACCOUNTS.NEXTVAL,:email,:password,:completeName,dbms_random.string('x',32))",
-            [email,password,completeName]
-        );
+            let insertion = await connection.execute(
+                "INSERT INTO ACCOUNTS(ID,EMAIL,PASSWORD,COMPLETE_NAME,TOKEN)VALUES(SEQ_ACCOUNTS.NEXTVAL,:email,:password,:completeName,dbms_random.string('x',32))",
+                {email,password,completeName},
+                {autoCommit: false}
+            );
 
-        await connection.close();
+            await connection.commit();
+            console.log("Insertion results: ", insertion);
 
-        console.log(insertion.rows);
+        } catch (err) {
+            console.error("Database error: ", err);
+            throw new Error("Error during account creation");
+
+        } finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
+        }
+
     }
 
     export const signUpHandler: RequestHandler = async (req: Request, res: Response) =>{
         const pEmail = req.get('email');
         const pPassword = req.get('password');
         const pCompleteName = req.get('completeName');
+
         if (pEmail && pPassword && pCompleteName){
-            await signUp(pCompleteName, pEmail, pPassword);
-            res.statusCode = 200;
-            res.send('Conta criada com sucesso!');
+            if(verifyEmail(pEmail) && verifyPassword(pPassword)){
+                try {
+                    const hashedPassword = await bcrypt.hash(pPassword,10);
+                    await signUp(pEmail, hashedPassword, pCompleteName);
+                    res.statusCode = 200;
+                    res.send('Conta criada com sucesso!');
+                } catch (error) {
+                    res.statusCode = 500;
+                    res.send('Erro ao criar conta. Tente novamente.')
+                }
+            } else {
+                res.statusCode = 400;
+                res.send('Requisição inválida - Parâmetros incorretos.')
+            }
         } else {
             res.statusCode = 400;
             res.send('Requisição inválida - Parâmetros faltando.');
