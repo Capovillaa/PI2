@@ -26,7 +26,7 @@ export namespace AccountsManager {
         return dateRegex.test(birthDate);
     }
 
-    async function signUp(email:string, password:string, completeName:string, birthDate:string) {
+    async function signUp(nome:string, email:string, senha:string, dataNascimento:string) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -39,10 +39,10 @@ export namespace AccountsManager {
 
             let insertion = await connection.execute(
                 `INSERT INTO ACCOUNTS
-                    (ID,EMAIL,PASSWORD,COMPLETE_NAME,BIRTHDATE,TOKEN)
+                    (ID_USR,NOME,EMAIL,SENHA,DATA_NASC,TOKEN)
                 VALUES
-                    (SEQ_ACCOUNTS.NEXTVAL,:email,:password,:completeName,TO_DATE(:birthDate, 'DD-MM-YYYY'),dbms_random.string('x',32))`,
-                {email,password,completeName,birthDate},
+                    (SEQ_ACCOUNTS.NEXTVAL,:nome,:email,:senha,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32))`,
+                {nome,email,senha,dataNascimento},
                 {autoCommit: false}
             );
 
@@ -66,16 +66,16 @@ export namespace AccountsManager {
     }
 
     export const signUpHandler: RequestHandler = async (req: Request, res: Response) =>{
+        const pNome = req.get('nome');
         const pEmail = req.get('email');
-        const pPassword = req.get('password');
-        const pCompleteName = req.get('completeName');
-        const pBirthDate = req.get('birthDate');
+        const pSenha = req.get('senha');
+        const pBirthDate = req.get('dataNascimento');
 
-        if (pEmail && pPassword && pCompleteName && pBirthDate){
-            if(validateEmail(pEmail) && validatePassword(pPassword) && validateBirthDate(pBirthDate)){
+        if (pEmail && pSenha && pNome && pBirthDate){
+            if(validateEmail(pEmail) && validatePassword(pSenha) && validateBirthDate(pBirthDate)){
                 try {
-                    const hashedPassword = await bcrypt.hash(pPassword,10);
-                    await signUp(pEmail, hashedPassword, pCompleteName, pBirthDate);
+                    const hashedPassword = await bcrypt.hash(pSenha,10);
+                    await signUp(pNome, pEmail, hashedPassword, pBirthDate);
                     res.statusCode = 200;
                     res.send('Conta criada com sucesso!');
                 } catch (error) {
