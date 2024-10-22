@@ -50,17 +50,17 @@ export namespace FinancialManager{
                 {autoCommit: false}
                 );
                 await connection.commit();
-                console.log("Insertion results: ", insertion);
+                console.log("Resultados da inserção: ", insertion);
             }
         }catch (err) {
-            console.error("Database error: ", err);
-            throw new Error("Error registering credit card");
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro ao registrar o cartão de crédito.");
         }finally {
             if (connection){
                 try{
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
