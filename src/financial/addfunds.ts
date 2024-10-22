@@ -1,41 +1,83 @@
 import {Request,Response,RequestHandler} from "express";
-import { Wallet } from "../types/financialTypes";
+import OracleDB from "oracledb";
+import dotenv from "dotenv";
+dotenv.config();
 
 export namespace FinancialManager{
 
-    let walletDatabase: Wallet[] = [];
+    async function addFunds(email: string, valor: number){
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
 
-    let w1: Wallet = {
-        ownerEmail : "pedro@puc.edu.br",
-        balance: 0,
-        cardNumber: undefined
-    };
-    
-    walletDatabase.push(w1);
+        try{
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
 
-    function addFunds(email: string, valor: number){
-        const wallet = walletDatabase.find(w => w.ownerEmail === email);
-        if (wallet?.balance){
-            wallet.balance = wallet.balance + valor;
+            let Id = Number(await connection.execute(
+                `SELECT ID_USR
+                FROM ACCOUNTS
+                WHERE EMAIL = :email`,
+                {email}
+            ));
+
+            let balance = Number(await connection.execute(
+                `SELECT WALLETS.SALDO
+                FROM WALLETS
+                JOIN ACCOUNTS
+                ON WALLETS.ID_CRT = ACCOUNTS.FK_ID_CRT
+                WHERE ID = :ID`,
+                {Id}
+            ));
+
+            balance += valor;
+            
+            let insertion = await connection.execute(
+                `INSERT INTO WALLETS
+                    (SALDO)
+                VALUES
+                    (:balance)`,
+                {balance},
+                {autoCommit: false}
+            );
+
+            await connection.commit();
+            console.log("Insertion results: ", insertion);
+     
+        }catch (err) {
+            console.error("Database error: ", err);
+            throw new Error("Error during credit debiting");
+        }finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
         }
     }
 
     export const addFundsHandler:RequestHandler = async (req:Request, res:Response) => {
-
         const pEmail = req.get('email');
         const pValor = Number(req.get('valor'));
         const pCardNumber = Number(req.get('numero-cartao'));
 
         if (pEmail && pValor && pCardNumber){
-            addFunds(pEmail, pValor);
-            res.statusCode = 200;
-            res.send(`Foram adicionados a conta ${pValor} reais.`);
+            try {
+                await addFunds(pEmail,pValor);
+                res.statusCode = 200;
+                res.send('Crédito Adicionado Com sucesso.');
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao colocar crédito na conta. Tente novamente.');
+            }
         } else {
             res.statusCode = 400;
-            res.send('Parametros invalidos ou faltantes.')
+            res.send('Parametros invalidos ou faltantes.');
         }
 
     }
-            
-    
 }
