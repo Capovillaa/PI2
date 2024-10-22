@@ -5,6 +5,54 @@ dotenv.config();
 
 export namespace FinancialManager{
 
+    async function addCreditCard(email:string,cardNumber:number,cvv:number,expirationDate:string){
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        try{
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+
+            let Id = Number(await connection.execute(
+                `SELECT ID_USR
+                FROM ACCOUNTS
+                WHERE EMAIL = :email`,
+                {email}
+            ));
+            if(await connection.execute(
+                `SELECT NUM_CARD
+                FROM CREDIT_CARD
+                WHERE FK_ID_USR = :Id`,
+                {Id} 
+            ) === undefined){
+                let insertion = await connection.execute(
+                    `INSERT INTO CREDIT_CARD
+                        (NUM_CARD,CVV,VALIDADE,FK_ID_USR)
+                    VALUES
+                        (:cardNumber,:cvv,:expirationDate,:Id)`,
+                    {cardNumber,cvv,expirationDate,Id},
+                    {autoCommit: false}
+                );
+                await connection.commit();
+                console.log("Insertion results: ", insertion);
+            }
+        }catch (err) {
+            console.error("Database error: ", err);
+            throw new Error("Error registering credit card");
+        }finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
+        } 
+    }
+
     async function addFunds(email: string, valor: number){
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -62,11 +110,14 @@ export namespace FinancialManager{
 
     export const addFundsHandler:RequestHandler = async (req:Request, res:Response) => {
         const pEmail = req.get('email');
+        const pCardOwner = req.get('nome-titular');
         const pValor = Number(req.get('valor'));
         const pCardNumber = Number(req.get('numero-cartao'));
-
-        if (pEmail && pValor && pCardNumber){
+        const pCvv = Number(req.get('cvv'));
+        const pExpirationDate = req.get('validade');
+        if (pEmail && pValor && pCardNumber && pCvv && pExpirationDate){
             try {
+                await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
                 await addFunds(pEmail,pValor);
                 res.statusCode = 200;
                 res.send('Crédito Adicionado Com sucesso.');
