@@ -18,6 +18,7 @@ routes.put('/signUp', AccountsManager.signUpHandler);
 routes.put('/login', getLoginAuthenticatorHandler);
 
 routes.post('/addFunds', FinancialManager.addFundsHandler);
+routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 
 server.use(routes);
 
