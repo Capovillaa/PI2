@@ -1,5 +1,5 @@
 import {Request, RequestHandler, Response} from "express";
-import OracleDB from "oracledb";
+import OracleDB, { autoCommit } from "oracledb";
 import dotenv from "dotenv";
 import bcrypt from 'bcryptjs';
 dotenv.config();
@@ -37,11 +37,21 @@ export namespace AccountsManager {
                 connectString: process.env.ORACLE_CONN_STR
             });
 
+            let walletCreation = await connection.execute(
+                `INSERT INTO WALLETS
+                    (ID_CRT, SALDO)
+                VALUES
+                    (SEQ_WALLETSPK.NEXTVAL, 0)`,
+                {},
+                {autoCommit: false}
+            );
+
+
             let insertion = await connection.execute(
                 `INSERT INTO ACCOUNTS
-                    (ID_USR,NOME,EMAIL,SENHA,DATA_NASC,TOKEN)
+                    (ID_USR,NOME,EMAIL,SENHA,DATA_NASC,TOKEN,FK_ID_CRT)
                 VALUES
-                    (SEQ_ACCOUNTS.NEXTVAL,:nome,:email,:senha,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32))`,
+                    (SEQ_ACCOUNTS.NEXTVAL,:nome,:email,:senha,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32),SEQ_WALLETSFK.NEXTVAL)`,
                 {nome,email,senha,dataNascimento},
                 {autoCommit: false}
             );

@@ -16,24 +16,25 @@ export namespace FinancialManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            let Id = Number(await connection.execute(
-                `SELECT ID_USR
+            let idCrt = Number(await connection.execute(
+                `SELECT FK_ID_CRT
                 FROM ACCOUNTS
                 WHERE EMAIL = :email`,
                 {email}
             ));
+
             if(await connection.execute(
                 `SELECT NUM_CARD
                 FROM CREDIT_CARD
-                WHERE FK_ID_USR = :Id`,
-                {Id} 
+                WHERE FK_ID_CRT = :idCrt`,
+                {idCrt} 
             ) === undefined){
                 let insertion = await connection.execute(
                     `INSERT INTO CREDIT_CARD
-                        (NUM_CARD,CVV,VALIDADE,FK_ID_USR)
+                        (NUM_CARD,CVV,VALIDADE,FK_ID_CRT)
                     VALUES
-                        (:cardNumber,:cvv,:expirationDate,:Id)`,
-                    {cardNumber,cvv,expirationDate,Id},
+                        (:cardNumber,:cvv,:expirationDate,:IdCrt)`,
+                    {cardNumber,cvv,expirationDate,idCrt},
                     {autoCommit: false}
                 );
                 await connection.commit();
@@ -76,7 +77,7 @@ export namespace FinancialManager{
                 FROM WALLETS
                 JOIN ACCOUNTS
                 ON WALLETS.ID_CRT = ACCOUNTS.FK_ID_CRT
-                WHERE ID = :ID`,
+                WHERE ID = :Id`,
                 {Id}
             ));
 
@@ -115,7 +116,7 @@ export namespace FinancialManager{
         const pCardNumber = Number(req.get('numero-cartao'));
         const pCvv = Number(req.get('cvv'));
         const pExpirationDate = req.get('validade');
-        if (pEmail && pValor && pCardNumber && pCvv && pExpirationDate){
+        if (pEmail && !isNaN(pValor) && !isNaN(pCardNumber) && !isNaN(pCvv) && pExpirationDate){
             try {
                 await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
                 await addFunds(pEmail,pValor);
