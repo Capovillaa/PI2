@@ -1,8 +1,6 @@
 export type Wallet = {
-    //idOwner: number;
-    ownerEmail: string;
-    balance: number;
-    cardNumber: number | undefined;
+    ownerEmail: string,
+    balance: number | undefined;
 };
 
 export type CreditCard = {
