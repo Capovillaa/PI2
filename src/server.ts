@@ -1,6 +1,7 @@
 import express from "express";
 import {Request, Response, Router} from "express";
 import { AccountsManager } from "./accounts/accounts";
+import { getLoginAuthenticatorHandler } from "./accounts/loginAuthenticator"; 
 import { FinancialManager } from "./financial/addfunds";
 
 const port = 3000; 
@@ -14,6 +15,7 @@ routes.get('/', (req: Request, res: Response)=>{
 });
 
 routes.put('/signUp', AccountsManager.signUpHandler);
+routes.put('/login', getLoginAuthenticatorHandler);
 
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 
