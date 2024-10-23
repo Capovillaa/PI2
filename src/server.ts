@@ -1,12 +1,14 @@
 import express from "express";
 import {Request, Response, Router} from "express";
 import { AccountsManager } from "./accounts/accounts";
-import { getLoginAuthenticatorHandler } from "./accounts/loginAuthenticator"; 
+import { getLoginAuthenticatorHandler} from "./accounts/loginAuthenticator"; 
+import { EventsManager} from "./events/eventsDuda";
 import { FinancialManager } from "./financial/addfunds";
 
 const port = 3000; 
 const server = express();
 const routes = Router();
+
 
 
 routes.get('/', (req: Request, res: Response)=>{
@@ -17,6 +19,7 @@ routes.get('/', (req: Request, res: Response)=>{
 routes.put('/signUp', AccountsManager.signUpHandler);
 routes.put('/login', getLoginAuthenticatorHandler);
 
+routes.get('/getEvents', EventsManager.getEventosHandler);
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 
 server.use(routes);
