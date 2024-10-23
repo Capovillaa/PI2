@@ -31,7 +31,7 @@ export namespace EventsManager {
             
             if (searchTerm) {
                 conditionsgetEvents.push(`(TITULO LIKE :termo OR DESCRICAO LIKE :termo)`);
-                paramsgetEvents.termo = `%${searchTerm}%`; // Usa apenas um parâmetro nomeado
+                paramsgetEvents.termo = `%${searchTerm}%`; 
             }
             
             if (conditionsgetEvents.length > 0) {
@@ -65,15 +65,15 @@ export namespace EventsManager {
     
         try {
             console.log("Parâmetro de busca: ", searchTerm);
-            const eventos = await getEventos(searchTerm); // Chama a função getEventos passando o termo de busca
+            const eventos = await getEventos(searchTerm); 
             if (eventos.length > 0) {
-                res.status(200).json(eventos); // Retorna os eventos encontrados
+                res.status(200).json(eventos); 
             } else {
-                res.status(404).send("Nenhum evento encontrado."); // Se nenhum evento encontrado
+                res.status(404).send("Nenhum evento encontrado."); 
             }
         } catch (error) {
-            console.error("Erro ao buscar eventos: ", error); // Log do erro
-            res.status(500).send("Erro interno do servidor."); // Retorna erro interno
+            console.error("Erro ao buscar eventos: ", error); 
+            res.status(500).send("Erro interno do servidor."); 
         }
     };
             
