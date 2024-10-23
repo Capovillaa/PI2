@@ -3,6 +3,7 @@ import {Request, Response, Router} from "express";
 import { AccountsManager } from "./accounts/accounts";
 import { getLoginAuthenticatorHandler } from "./accounts/loginAuthenticator"; 
 import { FinancialManager } from "./financial/addfunds";
+import { betOnEventsHandler } from "./events/betOnEvent";
 
 const port = 3000; 
 const server = express();
@@ -19,6 +20,7 @@ routes.put('/login', getLoginAuthenticatorHandler);
 
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 
+routes.post('/betOnEvent',betOnEventsHandler);
 server.use(routes);
 
 server.listen(port, ()=>{
