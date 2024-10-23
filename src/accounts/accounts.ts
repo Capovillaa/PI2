@@ -51,7 +51,7 @@ export namespace AccountsManager {
                 `INSERT INTO ACCOUNTS
                     (ID_USR,NOME,EMAIL,SENHA,DATA_NASC,TOKEN,FK_ID_CRT)
                 VALUES
-                    (SEQ_ACCOUNTS.NEXTVAL,:nome,:email,:senha,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32),SEQ_WALLETSFK.NEXTVAL)`,
+                    (SEQ_ACCOUNTSPK.NEXTVAL,:nome,:email,:senha,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32),SEQ_WALLETSFK.NEXTVAL)`,
                 {nome,email,senha,dataNascimento},
                 {autoCommit: false}
             );
