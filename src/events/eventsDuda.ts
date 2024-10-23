@@ -33,6 +33,7 @@ export namespace EventsManager {
                 conditionsgetEvents.push(`(TITULO LIKE :termo OR DESCRICAO LIKE :termo)`);
                 paramsgetEvents.termo = `%${searchTerm}%`; 
             }
+            //preciso arrumar para letras maiusculas e minusculas
             
             if (conditionsgetEvents.length > 0) {
                 sqlgetEvents += ' WHERE ' + conditionsgetEvents.join(' AND ');
