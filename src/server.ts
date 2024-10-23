@@ -21,6 +21,7 @@ routes.put('/login', getLoginAuthenticatorHandler);
 
 routes.get('/getEvents', EventsManager.getEventosHandler);
 routes.post('/addFunds', FinancialManager.addFundsHandler);
+routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 
 server.use(routes);
 
