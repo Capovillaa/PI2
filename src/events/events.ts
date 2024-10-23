@@ -45,36 +45,6 @@ async function userId(token: string): Promise<number | null> {
     }
 }
 
-async function userId(token: string): Promise<number | null> {
-    OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
-
-    const connection = await OracleDB.getConnection({
-        user: process.env.ORACLE_USER,
-        password: process.env.ORACLE_PASSWORD,
-        connectString: process.env.ORACLE_CONN_STR
-    });
-
-    try {
-        const result = await connection.execute(
-            `SELECT ID FROM ACCOUNTS WHERE TOKEN = :token`,
-            [token]
-        );
-
-        const rows = result.rows as Account[];
-
-        if (rows && rows.length > 0) {
-            return rows[0].ID; 
-        } else {
-            return null; 
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        return null; 
-    } finally {
-        await connection.close(); 
-    }
-}
-
 async function addNewEvent(
     id_usuario: number, 
     titulo: string, 
@@ -152,5 +122,89 @@ async function getAvailableEvents() {
 
     await connection.close();
     return events.rows;
-    
+}
+
+export namespace EventsManager{
+
+    async function addNewEvent(email: string, titulo: string, descricao: string, 
+    valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectionString: process.env.ORACLE_CONN_STR
+            });
+
+            interface AccountResult {
+                ID_USR: number;
+            }
+
+            let resultIdUsr = await connection.execute<AccountResult>(
+                `SELECT ID_USR
+                 FROM ACCOUNTS
+                 WHERE EMAIL = :email`,
+                {email}
+            );
+
+            let idUsr = resultIdUsr.rows?.[0]?.ID_USR;
+            if (!idUsr) {
+                throw new Error("Usuário com este email não encontrado.");
+            }
+
+            let insertion = await connection.execute(
+                `INSERT INTO APPROVED_EVENTS
+                 (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, VALOR_COTA)
+                 VALUES
+                 (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, 
+                 TO_DATE(:dataHoraInicio, 'yyyy/mm/dd hh24:mi:ss'), 
+                 TO_DATE(:dataHoraFim, 'yyyy/mm/dd hh24:mi:ss'), 
+                 TO_DATE(:dataEvento, 'YYYY-MM-DD'), 
+                 :valorCota)`,
+                 {idUsr, titulo, descricao, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
+                 {autoCommit: false}
+            );
+            await connection.commit();
+            console.log("Resultados da inserção: ", insertion);
+
+        }catch (err) {
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro ao registrar o evento.");
+        }finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Erro ao tentar fechar a conexão: ", err);
+                }
+            }
+        }
+        
+    }
+
+    export const addNewEventsHandler:RequestHandler = async (req: Request, res:Response) => {
+        const pEmail = req.get('email');
+        const pTitulo = req.get('titulo');
+        const pDescricao = req.get('descricao');
+        const pValorCota = Number(req.get('valor-cota'));
+        const pDataHoraInicio = req.get('data-hora-inicio'); //Verificar se está correto
+        const pDataHoraFim = req.get('data-hora-fim');
+        const pDataEvento = req.get('data-evento');
+
+        if (pEmail && pTitulo && pDescricao && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
+            try {
+                await addNewEvent(pEmail, pTitulo, pDescricao, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
+                res.statusCode = 200;
+                res.send('Evento criado com sucesso.');
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao criar o evento. Tente novamente.');
+            }
+        } else {
+            res.statusCode = 400;
+            res.send('Parâmetros inválidos ou faltantes.');
+        }
+    }
 }
