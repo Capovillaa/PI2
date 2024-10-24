@@ -156,13 +156,13 @@ export namespace EventsManager{
 
             let insertion = await connection.execute(
                 `INSERT INTO EVENTS
-                 (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, VALOR_COTA)
+                 (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA)
                  VALUES
                  (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, 
                  TO_DATE(:dataHoraInicio, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataHoraFim, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataEvento, 'YYYY-MM-DD'), 
-                 :valorCota)`,
+                 'nao aprovado', :valorCota)`,
                  {idUsr, titulo, descricao, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
                  {autoCommit: false}
             );
