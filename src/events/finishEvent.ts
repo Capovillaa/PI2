@@ -39,10 +39,9 @@ async function getEventPool(IdEvt: number) {
 
         let resultValorCota = await connection.execute<valorCotasResult>(
             `SELECT VALOR_COTA
-            FROM APPROVED_EVENTS
+            FROM EVENTS
             WHERE ID_EVT = :IdEvt`,
-            {IdEvt},
-            {autoCommit: false}
+            {IdEvt}
         );
 
         let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
@@ -112,10 +111,9 @@ async function getWinnerGamblers(IdEvt: number,ResultadoEvento: string){
 
         let resultValorCota = await connection.execute<valorCotasResult>(
             `SELECT VALOR_COTA
-            FROM APPROVED_EVENTS
+            FROM EVENTS
             WHERE ID_EVT = :IdEvt`,
-            {IdEvt},
-            {autoCommit: false}
+            {IdEvt}
         );
 
         let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
