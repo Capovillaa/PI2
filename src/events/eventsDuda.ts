@@ -3,7 +3,7 @@ import OracleDB from "oracledb";
 import dotenv from "dotenv";
 dotenv.config();
 
-export namespace EventsManager {
+export namespace EventsManagerDuda {
 
     interface GetEvent {
         ID_EVENTO: number;
