@@ -155,7 +155,7 @@ export namespace EventsManager{
             }
 
             let insertion = await connection.execute(
-                `INSERT INTO APPROVED_EVENTS
+                `INSERT INTO EVENTS
                  (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, VALOR_COTA)
                  VALUES
                  (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, 
