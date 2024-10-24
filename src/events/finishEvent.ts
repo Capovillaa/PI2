@@ -179,10 +179,9 @@ async function distributePool(IdEvt: number,ResultadoEvento: string,pool: number
 
         let resultValorCota = await connection.execute<valorCotasResult>(
             `SELECT VALOR_COTA
-            FROM APPROVED_EVENTS
+            FROM EVENTS
             WHERE ID_EVT = :IdEvt`,
             {IdEvt},
-            {autoCommit: false}
         );
 
         let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
@@ -232,6 +231,8 @@ async function distributePool(IdEvt: number,ResultadoEvento: string,pool: number
                 let newBalance = pool * proportion;
                 balance += newBalance;
 
+                console.log('Updating wallet with values:', {balance, idCrt});
+
                 let update = await connection.execute(
                     `UPDATE WALLETS
                      SET SALDO = :balance
@@ -239,6 +240,7 @@ async function distributePool(IdEvt: number,ResultadoEvento: string,pool: number
                     {balance, idCrt},
                     {autoCommit: false}
                 );
+                await connection.commit();
 
             }
         }else{
