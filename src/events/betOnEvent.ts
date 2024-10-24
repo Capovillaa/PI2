@@ -112,10 +112,10 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
 
         let insertion = await connection.execute(
             `INSERT INTO BETS
-                (ID_APT,QTD_COTAS,FK_ID_EVT,FK_ID_USR,ESCOLHA)
-            VALUES
-                (SEQ_BETSPK.NEXTVAL,:qtdCotas,SEQ_EVENTSFK.NEXTVAL,:idUsr,:escolha)`,
-            {qtdCotas,escolha,idUsr},
+                (ID_APT, QTD_COTAS, FK_ID_EVT, FK_ID_USR, ESCOLHA)
+             VALUES
+                (SEQ_BETSPK.NEXTVAL, :qtdCotas, :idEvt, :idUsr, :escolha)`,
+            {qtdCotas, idEvt, idUsr, escolha},
             {autoCommit: false}
         );
 
@@ -142,6 +142,7 @@ export const betOnEventsHandler: RequestHandler = async (req : Request, res : Re
     const pTituloEvento = req.get('titulo-evento');
     const pQtdCotas = Number(req.get('qtd-cotas'));
     const pEscolha = req.get('escolha');
+
     if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
         try{
             await BetOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
