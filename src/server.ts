@@ -5,6 +5,7 @@ import { getLoginAuthenticatorHandler} from "./accounts/loginAuthenticator";
 import { EventsManager} from "./events/eventsDuda";
 import { FinancialManager } from "./financial/addfunds";
 import { betOnEventsHandler } from "./events/betOnEvent";
+import { finishEventHandler } from "./events/finishEvent";
 
 const port = 3000; 
 const server = express();
@@ -25,6 +26,8 @@ routes.post('/addFunds', FinancialManager.addFundsHandler);
 routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 
 routes.post('/betOnEvent',betOnEventsHandler);
+routes.post('/finishEvent',finishEventHandler);
+
 server.use(routes);
 
 server.listen(port, ()=>{
