@@ -149,7 +149,7 @@ export namespace EventsManager{
         DATA_EVENTO: Date;
     }
 
-    async function getEventos(searchTerm: string | undefined): Promise<GetEvent[]> {
+    async function searchEvents(searchTerm: string | undefined): Promise<GetEvent[]> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -274,12 +274,12 @@ export namespace EventsManager{
         }
     }
 
-    export const getEventosHandler:RequestHandler = async (req: Request, res: Response) => {
+    export const searchEventsHandler:RequestHandler = async (req: Request, res: Response) => {
         const pSearchTerm = req.query.palavra as string | undefined;
     
         try {
             console.log("Parâmetro de busca: ", pSearchTerm);
-            const eventos = await getEventos(pSearchTerm); 
+            const eventos = await searchEvents(pSearchTerm); 
             if (eventos.length > 0) {
                 res.status(200).json(eventos); 
             } else {

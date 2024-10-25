@@ -48,6 +48,7 @@ CREATE TABLE EVENTS (
     data_inicio VARCHAR2(10),
     data_fim VARCHAR2(10),
     data_evt VARCHAR2(10),
+    status VARCHAR2(30),
     valor_cota NUMBER
 );
 
