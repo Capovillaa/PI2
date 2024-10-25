@@ -269,6 +269,8 @@ export const finishEventHandler: RequestHandler = async (req : Request, res : Re
         const pool = await getEventPool(pIdEvt);
         const winnersPool = await getWinnerGamblers(pIdEvt,pResultadoEvento);
         await distributePool(pIdEvt,pResultadoEvento,pool,winnersPool);
+        res.statusCode = 200;
+        res.send('Evento finalizado com sucesso.');
     }else{
         res.statusCode = 400;
         res.send('Requisição inválida - Parâmetros faltantes');
