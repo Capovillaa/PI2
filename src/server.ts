@@ -1,11 +1,8 @@
 import express from "express";
 import {Request, Response, Router} from "express";
 import { AccountsManager } from "./accounts/accounts";
-import { getLoginAuthenticatorHandler} from "./accounts/loginAuthenticator"; 
 import { EventsManager } from "./events/events";
-import { FinancialManager } from "./financial/addfunds";
-import { betOnEventsHandler } from "./events/betOnEvent";
-import { finishEventHandler } from "./events/finishEvent";
+import { FinancialManager } from "./financial/financial";
 
 const port = 3000; 
 const server = express();
@@ -28,11 +25,11 @@ routes.put('/addNewEvent', EventsManager.addNewEventHandler);
 routes.get('/searchEvents', EventsManager.searchEventsHandler);
 routes.post('/evaluateNewEvent', EventsManager.evaluateNewEventHandler);
 routes.delete('/deleteEvent', EventsManager.deleteEventsHandler);
-routes.post('/betOnEvent',betOnEventsHandler);
-routes.post('/finishEvent',finishEventHandler);
+routes.post('/betOnEvent',EventsManager.betOnEventsHandler);
+routes.post('/finishEvent',EventsManager.finishEventHandler);
 
 server.use(routes);
 
 server.listen(port, ()=>{
-    console.log(`Server is running on: ${port}`);
+    console.log(`Servidor rodando na porta: ${port}`);
 })

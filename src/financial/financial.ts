@@ -136,7 +136,7 @@ export namespace FinancialManager{
         }
     }
 
-    async function withdrawFunds(email: string, senha: string, contaBancaria: string, valor: number) {
+    async function withdrawFunds(email: string, senha: string, contaBancaria: string, valor: number): Promise<number> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -156,6 +156,8 @@ export namespace FinancialManager{
             interface balanceResult {
                 SALDO: number;
             }
+
+            let valorTaxado: number = 0;
 
             let Authentication = await connection.execute(
                 'SELECT EMAIL, SENHA, FK_ID_CRT FROM ACCOUNTS WHERE EMAIL = :email',
@@ -187,6 +189,18 @@ export namespace FinancialManager{
                         throw new Error("Saldo em conta é menor que o valor que deseja sacar.");
                     }
 
+                    if (valor <= 100){
+                        valorTaxado = valor - (valor / 25);
+                    } else if (valor <= 1000){
+                        valorTaxado = valor - (valor / 100 * 3);
+                    } else if (valor <= 5000){
+                        valorTaxado = valor - (valor / 50);
+                    } else if (valor <= 100000){
+                        valorTaxado = valor - (valor / 100);
+                    } else {
+                        valorTaxado = valor;
+                    }
+
                     balance -= valor;
 
                     let update = await connection.execute(
@@ -204,6 +218,8 @@ export namespace FinancialManager{
             } else {
                 throw new Error("Email não encontrado.");
             }
+
+            return valorTaxado;
 
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
@@ -249,9 +265,9 @@ export namespace FinancialManager{
         const pValor = Number(req.get('valor'));
         if (pEmail && pSenha && pContaBancaria && !isNaN(pValor)){
             try {
-                await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
+                const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
                 res.statusCode = 200;
-                res.send('Valor sacado com sucesso!');
+                res.send(`Valor sacado após a taxação: ${valorSacado}`);
             } catch (error) {
                 res.statusCode = 500;
                 res.send('Erro ao sacar o dinheiro. Tente novamente.');

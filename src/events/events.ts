@@ -197,6 +197,140 @@ export namespace EventsManager{
         }
     }
 
+    async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escolha:string) {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        try{
+
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+
+            interface idUsrResult{
+                ID_USR: number;
+            }
+
+            interface idCrtResult {
+                FK_ID_CRT: number;
+            }
+
+            interface balanceResult {
+                SALDO: number;
+            }
+
+            interface idEventResult {
+                ID_EVT: number;
+            }
+
+            interface valorCotasResult{
+                VALOR_COTA: number;
+            }
+
+            let resultIdUsr = await connection.execute<idUsrResult>(
+                `SELECT ID_USR
+                FROM ACCOUNTS
+                WHERE EMAIL = :email`,
+                {email}
+            );
+
+            let idUsr = resultIdUsr.rows?.[0]?.ID_USR;
+            if (!idUsr) {
+                throw new Error("Usuário com este email não encontrado.");
+            };
+
+            let resultIdCrt = await connection.execute<idCrtResult>(
+                `SELECT FK_ID_CRT
+                FROM ACCOUNTS
+                WHERE ID_USR = :idUsr`,
+                {idUsr}
+            );
+
+            let idCrt = resultIdCrt.rows?.[0]?.FK_ID_CRT;
+            if (!idCrt) {
+                throw new Error("Usuário com este id.");
+            };
+
+            let resultBalance = await connection.execute<balanceResult>(
+                `SELECT SALDO
+                FROM WALLETS
+                WHERE ID_CRT = :idCrt`,
+                {idCrt}
+            );
+
+            let balance = resultBalance.rows?.[0]?.SALDO;
+            if (balance === undefined || balance === null) {
+                throw new Error("Carteira do usuário não encontrada.");
+            }
+
+            let resultIdEvent = await connection.execute<idEventResult>(
+                `SELECT ID_EVT
+                FROM EVENTS
+                WHERE TITULO = :tituloEvento`,
+                {tituloEvento}
+            );
+
+            let idEvt = resultIdEvent.rows?.[0]?.ID_EVT;
+            if (!idEvt) {
+                throw new Error("Evento com este Titulo não encontrado.");
+            };
+
+            let resultValorCota = await connection.execute<valorCotasResult>(
+                `SELECT VALOR_COTA
+                FROM EVENTS
+                WHERE ID_EVT = :idEvt`,
+                {idEvt}
+            );
+
+            let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
+            if (!valorCota) {
+                throw new Error("Evento com parametro faltante.");
+            };
+
+            if(balance < (valorCota*qtdCotas)){
+                throw new Error("Saldo insuficiente.");
+            }
+
+            let valorAposta = valorCota*qtdCotas;
+            balance -= valorAposta;
+
+            let update = await connection.execute(
+                `UPDATE WALLETS
+                SET SALDO = :balance
+                WHERE ID_CRT = :idCrt`,
+                {balance, idCrt},
+                {autoCommit: false}
+            );
+
+            let insertion = await connection.execute(
+                `INSERT INTO BETS
+                    (ID_APT, QTD_COTAS, FK_ID_EVT, FK_ID_USR, ESCOLHA)
+                VALUES
+                    (SEQ_BETSPK.NEXTVAL, :qtdCotas, :idEvt, :idUsr, :escolha)`,
+                {qtdCotas, idEvt, idUsr, escolha},
+                {autoCommit: false}
+            );
+
+            await connection.commit();
+            console.log("Insertion results: ", insertion);
+        
+
+        }catch(err){
+            console.log('DataBase error',err);
+            throw new Error("Error during bet");
+        }finally{
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
+        }
+    }
+
     async function deleteEvents(idEvento:number) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -231,6 +365,160 @@ export namespace EventsManager{
         }
     }
 
+    async function finishEvent(IdEvt: number,ResultadoEvento:string) {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        let pool:number = 0;
+        let winnerPool:number = 0;
+        try{
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+
+            interface Bet {
+                ID_APT: number;
+                QTD_COTAS: number;
+                FK_ID_EVT: number;
+                FK_ID_USR: number;
+                ESCOLHA: string;
+            }
+
+            interface valorCotasResult{
+                VALOR_COTA: number;
+            }
+
+            const allBets = await connection.execute<Bet>(
+                `SELECT *
+                FROM BETS
+                WHERE FK_ID_EVT = :IdEvt`,
+                [IdEvt],
+                { outFormat: OracleDB.OUT_FORMAT_OBJECT }
+            );
+
+            let resultValorCota = await connection.execute<valorCotasResult>(
+                `SELECT VALOR_COTA
+                FROM EVENTS
+                WHERE ID_EVT = :IdEvt`,
+                {IdEvt}
+            );
+
+            let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
+            if (!valorCota) {
+                throw new Error("Evento com parametro faltante.");
+            };
+
+            //rows: [{ ID_APT: 1, QTD_COTAS: ? , FK_ID_EVT: ?,FK_ID_USR: ?,ESCOLHA: ? }]
+
+            if(allBets.rows && allBets.rows.length > 0){
+                for(const row of allBets.rows){
+                    let QTD_COTAS: number = row.QTD_COTAS as number;
+                    pool += (QTD_COTAS * valorCota);
+                }
+                console.log(pool);
+            }else{
+                throw new Error("Nenhuma linha encontrada.");
+            }
+
+            const allWinnersBets = await connection.execute<Bet>(
+                `SELECT *
+                FROM BETS
+                WHERE FK_ID_EVT = :IdEvt AND ESCOLHA = :ResultadoEvento`,
+                [IdEvt, ResultadoEvento],
+                { outFormat: OracleDB.OUT_FORMAT_OBJECT }
+            );
+
+            if(allWinnersBets.rows && allWinnersBets.rows.length > 0){
+                for(const row of allWinnersBets.rows){
+                    let QTD_COTAS: number = row.QTD_COTAS as number;
+                    winnerPool += (QTD_COTAS * valorCota);
+                }
+                console.log(winnerPool);
+            }else{
+                throw new Error("Nenhuma linha encontrada.");
+            }
+
+            if(allWinnersBets.rows && allWinnersBets.rows.length > 0){
+                for(const row of allWinnersBets.rows){
+                    let QTD_COTAS: number = row.QTD_COTAS as number;
+                    let FK_ID_USR: number = row.FK_ID_USR as number;
+
+                    interface idCrtResult {
+                        FK_ID_CRT: number;
+                    }
+
+                    interface balanceResult {
+                        SALDO: number;
+                    }
+
+                    let resultIdCrt = await connection.execute<idCrtResult>(
+                        `SELECT FK_ID_CRT
+                        FROM ACCOUNTS
+                        WHERE ID_USR = :FK_ID_USR`,
+                        {FK_ID_USR}
+                    );
+
+                    let idCrt = resultIdCrt.rows?.[0]?.FK_ID_CRT;
+                    if (!idCrt) {
+                        throw new Error("Usuário com este id.");
+                    };
+                    let resultBalance = await connection.execute<balanceResult>(
+                        `SELECT SALDO
+                        FROM WALLETS
+                        WHERE ID_CRT = :idCrt`,
+                        {idCrt}
+                    );
+            
+                    let balance = resultBalance.rows?.[0]?.SALDO;
+                    if (balance === undefined || balance === null) {
+                        throw new Error("Carteira do usuário não encontrada.");
+                    }
+
+                    let valorAposta = valorCota * QTD_COTAS;
+                    let proportion = valorAposta/winnerPool;
+                    let newBalance = pool * proportion;
+                    balance += newBalance;
+
+                    console.log('Updating wallet with values:', {balance, idCrt});
+
+                    let update = await connection.execute(
+                        `UPDATE WALLETS
+                        SET SALDO = :balance
+                        WHERE ID_CRT = :idCrt`,
+                        {balance, idCrt},
+                        {autoCommit: false}
+                    );
+                    await connection.commit();
+
+                }
+            }else{
+                throw new Error("Nenhuma linha encontrada.");
+            }
+
+            let updateStatus = await connection.execute(
+                `UPDATE EVENTS
+                SET STATUS = 'finalizado'
+                WHERE ID_EVT = :idEvt`,
+                {IdEvt},
+                {autoCommit: false}
+            );
+            await connection.commit();
+        }catch(err){
+            console.log('DataBase error',err);
+            throw new Error("Error during geting event Pool.");
+        }finally{
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
+        }
+    }
+
     export const addNewEventHandler:RequestHandler = async (req: Request, res:Response) => {
         const pEmail = req.get('email');
         const pTitulo = req.get('titulo');
@@ -241,13 +529,18 @@ export namespace EventsManager{
         const pDataEvento = req.get('data-evento');
 
         if (pEmail && pTitulo && pDescricao && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
-            try {
-                await addNewEvent(pEmail, pTitulo, pDescricao, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
-                res.statusCode = 200;
-                res.send('Evento criado com sucesso.');
-            } catch (error) {
-                res.statusCode = 500;
-                res.send('Erro ao criar o evento. Tente novamente.');
+            if (pValorCota >= 1){
+                try {
+                    await addNewEvent(pEmail, pTitulo, pDescricao, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
+                    res.statusCode = 200;
+                    res.send('Evento criado com sucesso.');
+                } catch (error) {
+                    res.statusCode = 500;
+                    res.send('Erro ao criar o evento. Tente novamente.');
+                }
+            } else {
+                res.statusCode = 400;
+                res.send('Valor mínimo da aposta não foi atingido.')
             }
         } else {
             res.statusCode = 400;
@@ -291,6 +584,27 @@ export namespace EventsManager{
         }
     }
 
+    export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
+        const pEmail = req.get('email');
+        const pTituloEvento = req.get('titulo-evento');
+        const pQtdCotas = Number(req.get('qtd-cotas'));
+        const pEscolha = req.get('escolha');
+
+        if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
+            try{
+                await BetOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
+                res.statusCode = 200;
+                res.send('Bet adicionada com sucesso.');
+            }catch(err){
+                res.statusCode = 500;
+                res.send('Erro ao realizar a aposta.');
+            }
+        }else{
+            res.statusCode = 400;
+            res.send('Requisição inválida - Parâmetros inválidos')
+        }
+    }
+
     export const deleteEventsHandler:RequestHandler = async (req: Request, res: Response) => {
         const pIdEvento = Number(req.get('id-evento'));
 
@@ -306,6 +620,21 @@ export namespace EventsManager{
         } else {
             res.statusCode = 400;
             res.send('Parâmetros inválidos ou faltantes.');
+        }
+    }
+
+    export const finishEventHandler: RequestHandler = async (req : Request, res : Response) => {
+        const pIdAdmin = Number(req.get('id_admin'));
+        const pIdEvt = Number(req.get('id_evt'));
+        const pResultadoEvento = req.get('resultado')?.toLowerCase();
+
+        if(!isNaN(pIdAdmin) && !isNaN(pIdEvt) && pResultadoEvento){
+            await finishEvent(pIdEvt,pResultadoEvento);
+            res.statusCode = 200;
+            res.send('Evento finalizado com sucesso.');
+        }else{
+            res.statusCode = 400;
+            res.send('Requisição inválida - Parâmetros faltantes');
         }
     }
 }
