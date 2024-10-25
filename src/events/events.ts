@@ -169,7 +169,7 @@ export namespace EventsManager{
                 paramsgetEvents.termo = `%${searchTerm}%`; 
             }
             //preciso arrumar para letras maiusculas e minusculas
-            
+            conditionsgetEvents.push (`status = 'aprovado'`);
             if (conditionsgetEvents.length > 0) {
                 sqlgetEvents += ' WHERE ' + conditionsgetEvents.join(' AND ');
             }
