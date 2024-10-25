@@ -50,8 +50,8 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
         let resultIdCrt = await connection.execute<idCrtResult>(
             `SELECT FK_ID_CRT
              FROM ACCOUNTS
-             WHERE EMAIL = :email`,
-            {email}
+             WHERE ID_USR = :idUsr`,
+            {idUsr}
         );
 
         let idCrt = resultIdCrt.rows?.[0]?.FK_ID_CRT;
@@ -73,8 +73,8 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
 
         let resultIdEvent = await connection.execute<idEventResult>(
             `SELECT ID_EVT
-            FROM APPROVED_EVENTS
-            WHERE TITULO = :tituloEvento`,
+             FROM EVENTS
+             WHERE TITULO = :tituloEvento`,
             {tituloEvento}
         );
 
@@ -85,7 +85,7 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
 
         let resultValorCota = await connection.execute<valorCotasResult>(
             `SELECT VALOR_COTA
-            FROM APPROVED_EVENTS
+            FROM EVENTS
             WHERE ID_EVT = :idEvt`,
             {idEvt}
         );
@@ -97,30 +97,31 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
 
         if(balance < (valorCota*qtdCotas)){
             throw new Error("Saldo insuficiente.");
-        }else{
-            let valorAposta = valorCota*qtdCotas;
-            balance -= valorAposta;
-
-            let update = await connection.execute(
-                `UPDATE WALLETS
-                 SET SALDO = :balance
-                 WHERE ID_CRT = :idCrt`,
-                {balance, idCrt},
-                {autoCommit: false}
-            );
-
-            let insertion = await connection.execute(
-                `INSERT INTO BETS
-                    (ID_APT,QTD_COTAS,FK_ID_EVT,FK_ID_USR,ESCOLHA)
-                VALUES
-                    (SEQ_BETSPK.NEXTVAL,:qtdCotas,SEQ_EVENTSFK.NEXTVAL,SEQ_ACCOUNTSFK.NEXTVAL,:escolha)`,
-                {qtdCotas,escolha},
-                {autoCommit: false}
-            );
-
-            await connection.commit();
-            console.log("Insertion results: ", insertion);
         }
+
+        let valorAposta = valorCota*qtdCotas;
+        balance -= valorAposta;
+
+        let update = await connection.execute(
+            `UPDATE WALLETS
+             SET SALDO = :balance
+             WHERE ID_CRT = :idCrt`,
+            {balance, idCrt},
+            {autoCommit: false}
+        );
+
+        let insertion = await connection.execute(
+            `INSERT INTO BETS
+                (ID_APT, QTD_COTAS, FK_ID_EVT, FK_ID_USR, ESCOLHA)
+             VALUES
+                (SEQ_BETSPK.NEXTVAL, :qtdCotas, :idEvt, :idUsr, :escolha)`,
+            {qtdCotas, idEvt, idUsr, escolha},
+            {autoCommit: false}
+        );
+
+        await connection.commit();
+        console.log("Insertion results: ", insertion);
+    
 
     }catch(err){
         console.log('DataBase error',err);
@@ -138,9 +139,10 @@ async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escol
 }
 export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
     const pEmail = req.get('email');
-    const pTituloEvento = req.get('titulo_evento');
-    const pQtdCotas = Number(req.get('qtd_cotas'));
+    const pTituloEvento = req.get('titulo-evento');
+    const pQtdCotas = Number(req.get('qtd-cotas'));
     const pEscolha = req.get('escolha');
+
     if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
         try{
             await BetOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
