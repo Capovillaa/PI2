@@ -6,7 +6,6 @@ dotenv.config();
 
 export namespace AccountsManager {
 
-
     function validateEmail(email: string) :boolean{
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
@@ -75,7 +74,83 @@ export namespace AccountsManager {
 
     }
 
-    export const signUpHandler: RequestHandler = async (req: Request, res: Response) =>{
+    async function loginAuthenticator(email:string, senha:string): Promise<boolean> {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+
+            interface AdminAccount {
+                EMAIL: string;
+                SENHA: string;
+            }
+
+            interface Account {
+                NOME: string;
+                EMAIL: string;
+                SENHA: string;
+            }
+
+            let adminLogin = await connection.execute(
+                `SELECT EMAIL, SENHA
+                 FROM ADMIN_ACCOUNTS
+                 WHERE EMAIL = :email`,
+                 {email}
+            )
+
+            let verificacaoLogin:boolean = false;
+
+            if (adminLogin.rows && adminLogin.rows.length > 0){
+                const adminAccount = adminLogin.rows[0] as unknown as AdminAccount
+                const senhaBanco = adminAccount.SENHA;
+
+                if (senha === senhaBanco){
+                    verificacaoLogin = true;
+                    console.log('Login bem sucedido. Bem-vindo(a) ADMIN');
+                }
+            }
+
+            let userLogin = await connection.execute(
+                `SELECT NOME, EMAIL, SENHA
+                 FROM ACCOUNTS
+                 WHERE EMAIL = :email`,
+                 {email}
+            )
+
+            if (userLogin.rows && userLogin.rows.length > 0){
+                const account = userLogin.rows[0] as unknown as Account
+                const senhaCriptografada = account.SENHA;
+                const isPasswordValid = await bcrypt.compare(senha, senhaCriptografada); 
+
+                if (isPasswordValid){
+                    verificacaoLogin = true;
+                    console.log(`Login bem sucedido. Bem-vindo(a), ${account.NOME}!`);
+                }
+            }
+            
+            return verificacaoLogin;
+
+        } catch (err) {
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro durante o login.");
+
+        } finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Erro ao tentar fechar a conexão: ", err);
+                }
+            }
+        }
+    }
+
+    export const signUpHandler: RequestHandler = async (req: Request, res: Response) => {
         const pNome = req.get('nome');
         const pEmail = req.get('email');
         const pSenha = req.get('senha');
@@ -102,7 +177,28 @@ export namespace AccountsManager {
         }
     }
 
-}
+    export const loginAuthenticatorHandler: RequestHandler = async (req: Request, res: Response) => {
+        const pEmail = req.get('email');
+        const pSenha = req.get('senha');
 
-//Verificar data e conectar com o banco.
-//Criar um Wallet no Oracle
+        if (pEmail && pSenha){
+            try {
+                const resultLogin = await loginAuthenticator(pEmail, pSenha);
+                
+                if (resultLogin){
+                    res.statusCode = 200;
+                    res.send('Login realizado com sucesso!')
+                } else {
+                    res.statusCode = 401;
+                    res.send('Senha incorreta ou usuário não encontrado.')
+                }
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao acessar a conta. Tente novamente.')
+            }
+        } else {
+            res.statusCode = 400;
+            res.send('Requisição inválida - Parâmetros incorretos.')
+        }
+    } 
+}

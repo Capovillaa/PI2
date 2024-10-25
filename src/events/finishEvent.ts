@@ -136,6 +136,14 @@ async function finishEvent(IdEvt: number,ResultadoEvento:string) {
             throw new Error("Nenhuma linha encontrada.");
         }
 
+        let updateStatus = await connection.execute(
+            `UPDATE EVENTS
+             SET STATUS = 'finalizado'
+             WHERE ID_EVT = :idEvt`,
+            {IdEvt},
+            {autoCommit: false}
+        );
+        await connection.commit();
     }catch(err){
         console.log('DataBase error',err);
         throw new Error("Error during geting event Pool.");
@@ -152,11 +160,10 @@ async function finishEvent(IdEvt: number,ResultadoEvento:string) {
  
 export const finishEventHandler: RequestHandler = async (req : Request, res : Response) => {
     const pIdAdmin = Number(req.get('id_admin'));
-    const pStatus = req.get('status');
     const pIdEvt = Number(req.get('id_evt'));
     const pResultadoEvento = req.get('resultado')?.toLowerCase();
 
-    if(!isNaN(pIdAdmin) && pStatus && !isNaN(pIdEvt) && pResultadoEvento){
+    if(!isNaN(pIdAdmin) && !isNaN(pIdEvt) && pResultadoEvento){
         await finishEvent(pIdEvt,pResultadoEvento);
         res.statusCode = 200;
         res.send('Evento finalizado com sucesso.');

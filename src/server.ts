@@ -19,7 +19,7 @@ routes.get('/', (req: Request, res: Response)=>{
 });
 
 routes.put('/signUp', AccountsManager.signUpHandler);
-routes.put('/login', getLoginAuthenticatorHandler);
+routes.put('/login', AccountsManager.loginAuthenticatorHandler);
 
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
