@@ -15,6 +15,11 @@ export type Event = {
     status_evento: string;          
 };
 
+function validateEmail(email: string) :boolean{
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
 async function getAvailableEvents() {
     OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
 
@@ -83,7 +88,7 @@ export namespace EventsManager{
                  TO_DATE(:dataHoraInicio, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataHoraFim, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataEvento, 'YYYY-MM-DD'), 
-                 'nao aprovado', :valorCota)`,
+                 'em espera', :valorCota)`,
                  {idUsr, titulo, descricao, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
                  {autoCommit: false}
             );
@@ -591,13 +596,18 @@ export namespace EventsManager{
         const pEscolha = req.get('escolha');
 
         if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
-            try{
-                await betOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
-                res.statusCode = 200;
-                res.send('Bet adicionada com sucesso.');
-            }catch(err){
-                res.statusCode = 500;
-                res.send('Erro ao realizar a aposta.');
+            if(validateEmail(pEmail) && pQtdCotas >= 1){
+                try{
+                    await betOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
+                    res.statusCode = 200;
+                    res.send('Bet adicionada com sucesso.');
+                }catch(err){
+                    res.statusCode = 500;
+                    res.send('Erro ao realizar a aposta.');
+                }
+            }else{
+                res.statusCode = 400;
+                res.send('Parâmetros inválidos')
             }
         }else{
             res.statusCode = 400;

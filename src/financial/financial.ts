@@ -6,6 +6,19 @@ dotenv.config();
 
 export namespace FinancialManager{
 
+    function validateEmail(email: string) :boolean{
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    function validateCardNumber(cardNumber:number,cvv:number,expirationDate:string) :boolean{
+        const expirationDateRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;     
+        if(cardNumber > 9999999999999 && cardNumber < 10000000000000000 && cvv > 99 && cvv < 1000 && expirationDateRegex.test(expirationDate)){
+            return true;
+        }
+        return false;
+    }
+
     async function addCreditCard(email:string,cardNumber:number,cvv:number,expirationDate:string){
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -242,16 +255,21 @@ export namespace FinancialManager{
         const pCvv = Number(req.get('cvv'));
         const pExpirationDate = req.get('validade');
         if (pEmail && !isNaN(pValor) && !isNaN(pCardNumber) && !isNaN(pCvv) && pExpirationDate){
-            try {
-                await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
-                await addFunds(pEmail,pValor);
-                res.statusCode = 200;
-                res.send('Crédito Adicionado Com sucesso.');
-            } catch (error) {
-                res.statusCode = 500;
-                res.send('Erro ao colocar crédito na conta. Tente novamente.');
+            if(validateEmail(pEmail) && pValor > 0 && validateCardNumber(pCardNumber,pCvv,pExpirationDate)){ 
+                try {
+                    await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
+                    await addFunds(pEmail,pValor);
+                    res.statusCode = 200;
+                    res.send('Crédito Adicionado Com sucesso.');
+                } catch (error) {
+                    res.statusCode = 500;
+                    res.send('Erro ao colocar crédito na conta. Tente novamente.');
+                }
+            }else{
+                res.statusCode = 400;
+                res.send('Parametros invalidos.');
             }
-        } else {
+        }else {
             res.statusCode = 400;
             res.send('Parametros invalidos ou faltantes.');
         }
