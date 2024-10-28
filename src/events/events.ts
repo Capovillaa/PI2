@@ -197,7 +197,7 @@ export namespace EventsManager{
         }
     }
 
-    async function BetOnEvent(email:string,tituloEvento:string,qtdCotas:number,escolha:string) {
+    async function betOnEvent(email:string,tituloEvento:string,qtdCotas:number,escolha:string) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -592,7 +592,7 @@ export namespace EventsManager{
 
         if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
             try{
-                await BetOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
+                await betOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
                 res.statusCode = 200;
                 res.send('Bet adicionada com sucesso.');
             }catch(err){
