@@ -149,7 +149,7 @@ export namespace FinancialManager{
         }
     }
 
-    async function withdrawFunds(email: string, senha: string, contaBancaria: string, valor: number): Promise<number> {
+    async function withdrawFunds(email: string, senha: string, contaBancaria: number, valor: number): Promise<number> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -279,16 +279,21 @@ export namespace FinancialManager{
     export const withdrawFundsHandler:RequestHandler = async (req:Request, res:Response) => {
         const pEmail = req.get('email');
         const pSenha = req.get('senha');
-        const pContaBancaria = req.get('contaBancaria');
+        const pContaBancaria = Number(req.get('contaBancaria'));
         const pValor = Number(req.get('valor'));
-        if (pEmail && pSenha && pContaBancaria && !isNaN(pValor)){
-            try {
-                const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
-                res.statusCode = 200;
-                res.send(`Valor sacado após a taxação: ${valorSacado}`);
-            } catch (error) {
-                res.statusCode = 500;
-                res.send('Erro ao sacar o dinheiro. Tente novamente.');
+        if (pEmail && pSenha && !isNaN(pContaBancaria) && !isNaN(pValor)){
+            if (validateEmail(pEmail) && pValor > 0){
+                try {
+                    const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
+                    res.statusCode = 200;
+                    res.send(`Valor depositado na conta ${pContaBancaria} após a taxação: ${valorSacado}`);
+                } catch (error) {
+                    res.statusCode = 500;
+                    res.send('Erro ao sacar o dinheiro. Tente novamente.');
+                }
+            } else {
+                res.statusCode = 400;
+                res.send('Parâmetros inválidos ou faltantes.')
             }
         } else {
             res.statusCode = 400;

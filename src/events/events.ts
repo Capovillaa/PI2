@@ -348,8 +348,8 @@ export namespace EventsManager{
             });
 
             let deletion = await connection.execute(
-                `DELETE
-                 FROM EVENTS
+                `UPDATE EVENTS
+                 SET STATUS = 'removido'
                  WHERE ID_EVT = :idEvento`,
                  {idEvento},
                 {autoCommit:false}
@@ -596,7 +596,7 @@ export namespace EventsManager{
         const pEscolha = req.get('escolha');
 
         if(pEmail && pTituloEvento && !isNaN(pQtdCotas) && pEscolha){
-            if(validateEmail(pEmail) && pQtdCotas >= 1){
+            if(validateEmail(pEmail) && pQtdCotas > 0){
                 try{
                     await betOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
                     res.statusCode = 200;
@@ -639,9 +639,14 @@ export namespace EventsManager{
         const pResultadoEvento = req.get('resultado')?.toLowerCase();
 
         if(!isNaN(pIdAdmin) && !isNaN(pIdEvt) && pResultadoEvento){
-            await finishEvent(pIdEvt,pResultadoEvento);
-            res.statusCode = 200;
-            res.send('Evento finalizado com sucesso.');
+            try {
+                await finishEvent(pIdEvt,pResultadoEvento);
+                res.statusCode = 200;
+                res.send('Evento finalizado com sucesso.');
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao finalizar evento. Tente novamente.')
+            }
         }else{
             res.statusCode = 400;
             res.send('Requisição inválida - Parâmetros faltantes');
