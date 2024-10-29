@@ -185,10 +185,9 @@ export namespace EventsManager{
             let conditionsgetEvents: string[] = [];
             
             if (searchTerm) {
-                conditionsgetEvents.push(`(TITULO LIKE :termo OR DESCRICAO LIKE :termo OR CATEGORIA LIKE :termo)`);
+                conditionsgetEvents.push(`(UPPER(TITULO) LIKE UPPER (:termo) OR UPPER(DESCRICAO) LIKE UPPER(:termo) OR UPPER(CATEGORIA) LIKE UPPER(:termo))`);
                 paramsgetEvents.termo = `%${searchTerm}%`; 
             }
-            //preciso arrumar para letras maiusculas e minusculas
             conditionsgetEvents.push (`status = 'aprovado'`);
             if (conditionsgetEvents.length > 0) {
                 sqlgetEvents += ' WHERE ' + conditionsgetEvents.join(' AND ');
@@ -202,7 +201,7 @@ export namespace EventsManager{
             } else {
                 console.log ('Nenhum evento encontrado com essa palavra.');
                 return [];
-            }
+            } 
         } catch (err) {
             console.error("Database error: ", err);
             throw new Error("Error during event retrieval");
