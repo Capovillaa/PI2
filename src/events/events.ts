@@ -21,37 +21,6 @@ function validateEmail(email: string) :boolean{
     return emailRegex.test(email);
 }
 
-async function getAvailableEvents() {
-    OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
-
-    const connection = await OracleDB.getConnection({
-        user: process.env.ORACLE_USER,
-        password: process.env.ORACLE_PASSWORD,
-        connectString: process.env.ORACLE_CONN_STR
-    });
-
-    let events = await connection.execute(
-        `SELECT 
-            id_evt, 
-            id_usr, 
-            titulo, 
-            descricao, 
-            valor_cota, 
-            TO_CHAR(data_inicio, 'YYYY-MM-DD HH24:MI:SS') AS data_inicio, 
-            TO_CHAR(data_fim, 'YYYY-MM-DD HH24:MI:SS') AS data_fim, 
-            TO_CHAR(data_evt, 'YYYY-MM-DD') AS data_evt, 
-            status_evento 
-        FROM 
-            EVENTS 
-        WHERE 
-            status_evento = 'APROVADO' 
-            AND data_hora_fim > SYSDATE`
-    );
-
-    await connection.close();
-    return events.rows;
-}
-
 export namespace EventsManager{
     async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
     valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
@@ -154,6 +123,50 @@ export namespace EventsManager{
         DATA_INICIO: Date;
         DATA_FIM: Date;
         DATA_EVENTO: Date;
+        STATUS: string;
+    }
+
+    async function getEvents(status: string): Promise<GetEvent[]> {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+            let sqlgetEvents = `SELECT ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA FROM EVENTS`;
+            let paramsgetEvents: any = {};
+            let conditionsgetEvents: string[] = [];
+            if (status) {
+                console.log("Status buscado: ", status);
+                conditionsgetEvents.push(`STATUS LIKE :status`);
+                paramsgetEvents.status = `%${status}%`; 
+            }
+            if (conditionsgetEvents.length > 0) {
+                sqlgetEvents += ' WHERE ' + conditionsgetEvents.join(' AND ');
+            }
+            
+            const resultGetEvents = await connection.execute(sqlgetEvents, paramsgetEvents);
+            await connection.close();
+            if (resultGetEvents.rows && resultGetEvents.rows.length > 0) {
+                return resultGetEvents.rows as GetEvent[];
+            } else {
+                console.log ('Nenhum evento encontrado com esse status.');
+                return [];
+            }
+        } catch (err) {
+            console.error("Database error: ", err);
+            throw new Error("Error during event retrieval");
+        } finally {
+            if (connection) {
+                try {
+                    await connection.close();
+                } catch (err) {
+                    console.error("Error closing the connection: ", err);
+                }
+            }
+        }
     }
 
     async function searchEvents(searchTerm: string | undefined): Promise<GetEvent[]> {
@@ -572,6 +585,26 @@ export namespace EventsManager{
         } else {
             res.statusCode = 400;
             res.send('Parâmetros inválidos ou faltantes.');
+        }
+    }
+
+    export const getEventsHandler:RequestHandler = async (req: Request, res:Response) => {
+        const pStatus = req.get('status');
+        if (pStatus){
+            try {
+                const eventos = await getEvents(pStatus);
+                if (eventos.length > 0) {
+                    res.status(200).json(eventos); 
+                } else {
+                    res.status(404).send("Nenhum evento encontrado."); 
+                }
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao encontrar os eventos. Tente novamente.');
+            }
+        } else {
+            res.statusCode = 400;
+            res.send('Parametros invalidos.')
         }
     }
 

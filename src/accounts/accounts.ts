@@ -1,5 +1,5 @@
 import {Request, RequestHandler, Response} from "express";
-import OracleDB, { autoCommit } from "oracledb";
+import OracleDB from "oracledb";
 import dotenv from "dotenv";
 import bcrypt from 'bcryptjs';
 dotenv.config();
