@@ -45,6 +45,7 @@ CREATE TABLE EVENTS (
     fk_id_usr NUMBER,
     titulo VARCHAR2(255),
     descricao VARCHAR2(1000),
+    categoria VARCHAR2(255),
     data_inicio VARCHAR2(10),
     data_fim VARCHAR2(10),
     data_evt VARCHAR2(10),

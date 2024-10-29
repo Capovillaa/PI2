@@ -7,7 +7,8 @@ export type Event = {
     id_evento: number | undefined; 
     id_usuario: number;            
     titulo: string;                 
-    descricao: string;              
+    descricao: string;
+    categoria: string;
     valor_cota: number;             
     data_hora_inicio: string;        
     data_hora_fim: string;          
@@ -52,7 +53,7 @@ async function getAvailableEvents() {
 }
 
 export namespace EventsManager{
-    async function addNewEvent(email: string, titulo: string, descricao: string, 
+    async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
     valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -82,14 +83,14 @@ export namespace EventsManager{
 
             let insertion = await connection.execute(
                 `INSERT INTO EVENTS
-                 (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA)
+                 (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA)
                  VALUES
-                 (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, 
+                 (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, :categoria, 
                  TO_DATE(:dataHoraInicio, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataHoraFim, 'yyyy/mm/dd hh24:mi:ss'), 
                  TO_DATE(:dataEvento, 'YYYY-MM-DD'), 
                  'em espera', :valorCota)`,
-                 {idUsr, titulo, descricao, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
+                 {idUsr, titulo, descricao, categoria, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
                  {autoCommit: false}
             );
             await connection.commit();
@@ -149,6 +150,7 @@ export namespace EventsManager{
         FK_ID_USR: number;
         TITULO: string;
         DESCRICAO: string;
+        CATEGORIA: string;
         DATA_INICIO: Date;
         DATA_FIM: Date;
         DATA_EVENTO: Date;
@@ -165,12 +167,12 @@ export namespace EventsManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            let sqlgetEvents = `SELECT ID_EVT, FK_ID_USR, TITULO, DESCRICAO, DATA_INICIO, DATA_FIM, DATA_EVT, VALOR_COTA FROM EVENTS`;
+            let sqlgetEvents = `SELECT ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, VALOR_COTA FROM EVENTS`;
             let paramsgetEvents: any = {};
             let conditionsgetEvents: string[] = [];
             
             if (searchTerm) {
-                conditionsgetEvents.push(`(TITULO LIKE :termo OR DESCRICAO LIKE :termo)`);
+                conditionsgetEvents.push(`(TITULO LIKE :termo OR DESCRICAO LIKE :termo OR CATEGORIA LIKE :termo)`);
                 paramsgetEvents.termo = `%${searchTerm}%`; 
             }
             //preciso arrumar para letras maiusculas e minusculas
@@ -236,8 +238,8 @@ export namespace EventsManager{
 
             let resultIdUsr = await connection.execute<idUsrResult>(
                 `SELECT ID_USR
-                FROM ACCOUNTS
-                WHERE EMAIL = :email`,
+                 FROM ACCOUNTS
+                 WHERE EMAIL = :email`,
                 {email}
             );
 
@@ -248,8 +250,8 @@ export namespace EventsManager{
 
             let resultIdCrt = await connection.execute<idCrtResult>(
                 `SELECT FK_ID_CRT
-                FROM ACCOUNTS
-                WHERE ID_USR = :idUsr`,
+                 FROM ACCOUNTS
+                 WHERE ID_USR = :idUsr`,
                 {idUsr}
             );
 
@@ -260,8 +262,8 @@ export namespace EventsManager{
 
             let resultBalance = await connection.execute<balanceResult>(
                 `SELECT SALDO
-                FROM WALLETS
-                WHERE ID_CRT = :idCrt`,
+                 FROM WALLETS
+                 WHERE ID_CRT = :idCrt`,
                 {idCrt}
             );
 
@@ -272,8 +274,8 @@ export namespace EventsManager{
 
             let resultIdEvent = await connection.execute<idEventResult>(
                 `SELECT ID_EVT
-                FROM EVENTS
-                WHERE TITULO = :tituloEvento`,
+                 FROM EVENTS
+                 WHERE TITULO = :tituloEvento`,
                 {tituloEvento}
             );
 
@@ -284,8 +286,8 @@ export namespace EventsManager{
 
             let resultValorCota = await connection.execute<valorCotasResult>(
                 `SELECT VALOR_COTA
-                FROM EVENTS
-                WHERE ID_EVT = :idEvt`,
+                 FROM EVENTS
+                 WHERE ID_EVT = :idEvt`,
                 {idEvt}
             );
 
@@ -303,8 +305,8 @@ export namespace EventsManager{
 
             let update = await connection.execute(
                 `UPDATE WALLETS
-                SET SALDO = :balance
-                WHERE ID_CRT = :idCrt`,
+                 SET SALDO = :balance
+                 WHERE ID_CRT = :idCrt`,
                 {balance, idCrt},
                 {autoCommit: false}
             );
@@ -397,16 +399,16 @@ export namespace EventsManager{
 
             const allBets = await connection.execute<Bet>(
                 `SELECT *
-                FROM BETS
-                WHERE FK_ID_EVT = :IdEvt`,
+                 FROM BETS
+                 WHERE FK_ID_EVT = :IdEvt`,
                 [IdEvt],
                 { outFormat: OracleDB.OUT_FORMAT_OBJECT }
             );
 
             let resultValorCota = await connection.execute<valorCotasResult>(
                 `SELECT VALOR_COTA
-                FROM EVENTS
-                WHERE ID_EVT = :IdEvt`,
+                 FROM EVENTS
+                 WHERE ID_EVT = :IdEvt`,
                 {IdEvt}
             );
 
@@ -429,8 +431,8 @@ export namespace EventsManager{
 
             const allWinnersBets = await connection.execute<Bet>(
                 `SELECT *
-                FROM BETS
-                WHERE FK_ID_EVT = :IdEvt AND ESCOLHA = :ResultadoEvento`,
+                 FROM BETS
+                 WHERE FK_ID_EVT = :IdEvt AND ESCOLHA = :ResultadoEvento`,
                 [IdEvt, ResultadoEvento],
                 { outFormat: OracleDB.OUT_FORMAT_OBJECT }
             );
@@ -460,8 +462,8 @@ export namespace EventsManager{
 
                     let resultIdCrt = await connection.execute<idCrtResult>(
                         `SELECT FK_ID_CRT
-                        FROM ACCOUNTS
-                        WHERE ID_USR = :FK_ID_USR`,
+                         FROM ACCOUNTS
+                         WHERE ID_USR = :FK_ID_USR`,
                         {FK_ID_USR}
                     );
 
@@ -471,8 +473,8 @@ export namespace EventsManager{
                     };
                     let resultBalance = await connection.execute<balanceResult>(
                         `SELECT SALDO
-                        FROM WALLETS
-                        WHERE ID_CRT = :idCrt`,
+                         FROM WALLETS
+                         WHERE ID_CRT = :idCrt`,
                         {idCrt}
                     );
             
@@ -490,8 +492,8 @@ export namespace EventsManager{
 
                     let update = await connection.execute(
                         `UPDATE WALLETS
-                        SET SALDO = :balance
-                        WHERE ID_CRT = :idCrt`,
+                         SET SALDO = :balance
+                         WHERE ID_CRT = :idCrt`,
                         {balance, idCrt},
                         {autoCommit: false}
                     );
@@ -504,8 +506,8 @@ export namespace EventsManager{
 
             let updateStatus = await connection.execute(
                 `UPDATE EVENTS
-                SET STATUS = 'finalizado'
-                WHERE ID_EVT = :idEvt`,
+                 SET STATUS = 'finalizado'
+                 WHERE ID_EVT = :idEvt`,
                 {IdEvt},
                 {autoCommit: false}
             );
@@ -528,15 +530,16 @@ export namespace EventsManager{
         const pEmail = req.get('email');
         const pTitulo = req.get('titulo');
         const pDescricao = req.get('descricao');
+        const pCategoria = req.get('categoria');
         const pValorCota = Number(req.get('valor-cota'));
         const pDataHoraInicio = req.get('data-hora-inicio'); //Verificar se está correto
         const pDataHoraFim = req.get('data-hora-fim');
         const pDataEvento = req.get('data-evento');
 
-        if (pEmail && pTitulo && pDescricao && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
+        if (pEmail && pTitulo && pDescricao && pCategoria && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
             if (pValorCota >= 1){
                 try {
-                    await addNewEvent(pEmail, pTitulo, pDescricao, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
+                    await addNewEvent(pEmail, pTitulo, pDescricao, pCategoria, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
                     res.statusCode = 200;
                     res.send('Evento criado com sucesso.');
                 } catch (error) {
