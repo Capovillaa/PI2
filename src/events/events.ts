@@ -47,7 +47,7 @@ export namespace EventsManager{
 
             let idUsr = resultIdUsr.rows?.[0]?.ID_USR;
             if (!idUsr) {
-                throw new Error("Usuário com este email não encontrado.");
+                throw new Error("Não existe nenhum usuário com este email.");
             }
 
             let insertion = await connection.execute(
@@ -67,7 +67,7 @@ export namespace EventsManager{
 
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro ao registrar o evento.");
+            throw new Error("Erro ao tentar registrar o evento.");
         }finally {
             if (connection){
                 try{
@@ -102,7 +102,7 @@ export namespace EventsManager{
             console.log("Resultados da atualização: ", update);
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro ao atualizar o status do evento.");
+            throw new Error("Erro ao tentar atualizar o status do evento.");
         }finally {
             if (connection){
                 try{
@@ -156,14 +156,14 @@ export namespace EventsManager{
                 return [];
             }
         } catch (err) {
-            console.error("Database error: ", err);
-            throw new Error("Error during event retrieval");
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro ao tentar buscar os eventos.");
         } finally {
             if (connection) {
                 try {
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
@@ -203,14 +203,14 @@ export namespace EventsManager{
                 return [];
             } 
         } catch (err) {
-            console.error("Database error: ", err);
-            throw new Error("Error during event retrieval");
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro ao tentar buscar os eventos.");
         } finally {
             if (connection) {
                 try {
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
@@ -257,7 +257,7 @@ export namespace EventsManager{
 
             let idUsr = resultIdUsr.rows?.[0]?.ID_USR;
             if (!idUsr) {
-                throw new Error("Usuário com este email não encontrado.");
+                throw new Error("Não existe nenhum usuário com este email.");
             };
 
             let resultIdCrt = await connection.execute<idCrtResult>(
@@ -269,7 +269,7 @@ export namespace EventsManager{
 
             let idCrt = resultIdCrt.rows?.[0]?.FK_ID_CRT;
             if (!idCrt) {
-                throw new Error("Usuário com este id.");
+                throw new Error("Carteira do usuário não está registrada.");
             };
 
             let resultBalance = await connection.execute<balanceResult>(
@@ -305,7 +305,7 @@ export namespace EventsManager{
 
             let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
             if (!valorCota) {
-                throw new Error("Evento com parametro faltante.");
+                throw new Error("Evento com parâmetros faltantes.");
             };
 
             if(balance < (valorCota*qtdCotas)){
@@ -333,18 +333,18 @@ export namespace EventsManager{
             );
 
             await connection.commit();
-            console.log("Insertion results: ", insertion);
+            console.log("Resultados da inserção: ", insertion);
         
 
         }catch(err){
-            console.log('DataBase error',err);
-            throw new Error("Error during bet");
+            console.log("Erro do banco de dados: ", err);
+            throw new Error("Erro ao tentar criar a aposta.");
         }finally{
             if (connection){
                 try{
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
@@ -369,7 +369,7 @@ export namespace EventsManager{
                 {autoCommit:false}
             )
             await connection.commit();
-            console.log("Resultados da remoção: ", deletion);
+            console.log("Resultados da atualização: ", deletion);
         } catch (err) {
             console.error("Erro do banco de dados: ", err);
             throw new Error("Erro ao atualizar o status do evento.");
@@ -426,7 +426,7 @@ export namespace EventsManager{
 
             let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
             if (!valorCota) {
-                throw new Error("Evento com parametro faltante.");
+                throw new Error("Evento com parâmetros faltantes.");
             };
 
             //rows: [{ ID_APT: 1, QTD_COTAS: ? , FK_ID_EVT: ?,FK_ID_USR: ?,ESCOLHA: ? }]
@@ -438,7 +438,7 @@ export namespace EventsManager{
                 }
                 console.log(pool);
             }else{
-                throw new Error("Nenhuma linha encontrada.");
+                throw new Error("Nenhuma aposta encontrada.");
             }
 
             const allWinnersBets = await connection.execute<Bet>(
@@ -456,7 +456,7 @@ export namespace EventsManager{
                 }
                 console.log(winnerPool);
             }else{
-                throw new Error("Nenhuma linha encontrada.");
+                throw new Error("Nenhuma aposta encontrada.");
             }
 
             if(allWinnersBets.rows && allWinnersBets.rows.length > 0){
@@ -481,7 +481,7 @@ export namespace EventsManager{
 
                     let idCrt = resultIdCrt.rows?.[0]?.FK_ID_CRT;
                     if (!idCrt) {
-                        throw new Error("Usuário com este id.");
+                        throw new Error("Carteira do usuário não está registrada.");
                     };
                     let resultBalance = await connection.execute<balanceResult>(
                         `SELECT SALDO
@@ -500,7 +500,7 @@ export namespace EventsManager{
                     let newBalance = pool * proportion;
                     balance += newBalance;
 
-                    console.log('Updating wallet with values:', {balance, idCrt});
+                    console.log(`Atualizando saldo da carteira ${idCrt} para ${balance}`);
 
                     let update = await connection.execute(
                         `UPDATE WALLETS
@@ -513,7 +513,7 @@ export namespace EventsManager{
 
                 }
             }else{
-                throw new Error("Nenhuma linha encontrada.");
+                throw new Error("Nenhuma aposta encontrada.");
             }
 
             let updateStatus = await connection.execute(
@@ -525,14 +525,14 @@ export namespace EventsManager{
             );
             await connection.commit();
         }catch(err){
-            console.log('DataBase error',err);
-            throw new Error("Error during geting event Pool.");
+            console.log("Erro do banco de dados: ", err);
+            throw new Error("Erro ao tentar pegar a premiação do evento.");
         }finally{
             if (connection){
                 try{
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
@@ -556,7 +556,7 @@ export namespace EventsManager{
                     res.send('Evento criado com sucesso.');
                 } catch (error) {
                     res.statusCode = 500;
-                    res.send('Erro ao criar o evento. Tente novamente.');
+                    res.send('Erro ao tentar criar o evento. Tente novamente.');
                 }
             } else {
                 res.statusCode = 400;
@@ -579,7 +579,7 @@ export namespace EventsManager{
                 res.send('Evento avaliado com sucesso.');
             } catch (error) {
                 res.statusCode = 500;
-                res.send('Erro ao avaliar o evento. Tente novamente.');
+                res.send('Erro ao tentar avaliar o evento. Tente novamente.');
             }
         } else {
             res.statusCode = 400;
@@ -595,15 +595,15 @@ export namespace EventsManager{
                 if (eventos.length > 0) {
                     res.status(200).json(eventos); 
                 } else {
-                    res.status(404).send("Nenhum evento encontrado."); 
+                    res.status(404).send('Nenhum evento encontrado.'); 
                 }
             } catch (error) {
                 res.statusCode = 500;
-                res.send('Erro ao encontrar os eventos. Tente novamente.');
+                res.send('Erro ao tentar encontrar os eventos. Tente novamente.');
             }
         } else {
             res.statusCode = 400;
-            res.send('Parametros invalidos.')
+            res.send('Parâmetros inválidos ou faltantes.')
         }
     }
 
@@ -611,16 +611,17 @@ export namespace EventsManager{
         const pSearchTerm = req.query.palavra as string | undefined;
     
         try {
-            console.log("Parâmetro de busca: ", pSearchTerm);
+            console.log('Parâmetro de busca: ', pSearchTerm);
             const eventos = await searchEvents(pSearchTerm); 
             if (eventos.length > 0) {
                 res.status(200).json(eventos); 
             } else {
-                res.status(404).send("Nenhum evento encontrado."); 
+                res.statusCode = 404;
+                res.send('Nenhum evento encontrado.'); 
             }
         } catch (error) {
-            console.error("Erro ao buscar eventos: ", error); 
-            res.status(500).send("Erro interno do servidor."); 
+            res.statusCode = 500;
+            res.send('Erro ao tentar buscar os eventos. Tente novamente.');
         }
     }
 
@@ -635,18 +636,18 @@ export namespace EventsManager{
                 try{
                     await betOnEvent(pEmail,pTituloEvento,pQtdCotas,pEscolha);
                     res.statusCode = 200;
-                    res.send('Bet adicionada com sucesso.');
+                    res.send('Aposta realizada com sucesso.');
                 }catch(err){
                     res.statusCode = 500;
-                    res.send('Erro ao realizar a aposta.');
+                    res.send('Erro ao tentar realizar a aposta.');
                 }
             }else{
                 res.statusCode = 400;
-                res.send('Parâmetros inválidos')
+                res.send('Parâmetros inválidos ou faltantes.')
             }
         }else{
             res.statusCode = 400;
-            res.send('Requisição inválida - Parâmetros inválidos')
+            res.send('Parâmetros inválidos ou faltantes.')
         }
     }
 
@@ -660,7 +661,7 @@ export namespace EventsManager{
                 res.send('Evento removido com sucesso.')
             } catch (error) {
                 res.statusCode = 500;
-                res.send('Erro ao remover o evento. Tente novamente.');
+                res.send('Erro ao tentar remover o evento. Tente novamente.');
             }
         } else {
             res.statusCode = 400;
@@ -680,11 +681,11 @@ export namespace EventsManager{
                 res.send('Evento finalizado com sucesso.');
             } catch (error) {
                 res.statusCode = 500;
-                res.send('Erro ao finalizar evento. Tente novamente.')
+                res.send('Erro ao tentar finalizar evento. Tente novamente.')
             }
         }else{
             res.statusCode = 400;
-            res.send('Requisição inválida - Parâmetros faltantes');
+            res.send('Parâmetros inválidos ou faltantes.');
         }
     }
 }

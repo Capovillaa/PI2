@@ -8,19 +8,20 @@ const port = 3000;
 const server = express();
 const routes = Router();
 
-
-
 routes.get('/', (req: Request, res: Response)=>{
     res.statusCode = 403;
     res.send('Acesso não permitido. Rota default não disponivel.');
 });
 
+//Accounts
 routes.put('/signUp', AccountsManager.signUpHandler);
 routes.put('/login', AccountsManager.loginAuthenticatorHandler);
 
+//Financial
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 
+//Events
 routes.put('/addNewEvent', EventsManager.addNewEventHandler);
 routes.post('/evaluateNewEvent', EventsManager.evaluateNewEventHandler);
 routes.get('/getEvents', EventsManager.getEventsHandler);

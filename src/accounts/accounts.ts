@@ -56,18 +56,18 @@ export namespace AccountsManager {
             );
 
             await connection.commit();
-            console.log("Insertion results: ", insertion);
+            console.log("Resultados da inserção: ", insertion);
 
         } catch (err) {
-            console.error("Database error: ", err);
-            throw new Error("Error during account creation");
+            console.error("Erro do banco de dados: ", err);
+            throw new Error("Erro ao tentar criar a conta.");
 
         } finally {
             if (connection){
                 try{
                     await connection.close();
                 } catch (err) {
-                    console.error("Error closing the connection: ", err);
+                    console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
@@ -137,7 +137,7 @@ export namespace AccountsManager {
 
         } catch (err) {
             console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro durante o login.");
+            throw new Error("Erro ao tentar realizar o login.");
 
         } finally {
             if (connection){
@@ -162,18 +162,18 @@ export namespace AccountsManager {
                     const hashedPassword = await bcrypt.hash(pSenha,10);
                     await signUp(pNome, pEmail, hashedPassword, pBirthDate);
                     res.statusCode = 200;
-                    res.send('Conta criada com sucesso!');
+                    res.send('Conta criada com sucesso.');
                 } catch (error) {
                     res.statusCode = 500;
-                    res.send('Erro ao criar conta. Tente novamente.')
+                    res.send('Erro ao tentar criar a conta. Tente novamente.')
                 }
             } else {
                 res.statusCode = 400;
-                res.send('Requisição inválida - Parâmetros incorretos.')
+                res.send('Parâmetros inválidos ou faltantes.')
             }
         } else {
             res.statusCode = 400;
-            res.send('Requisição inválida - Parâmetros faltando.');
+            res.send('Parâmetros inválidos ou faltantes.');
         }
     }
 
@@ -187,18 +187,18 @@ export namespace AccountsManager {
                 
                 if (resultLogin){
                     res.statusCode = 200;
-                    res.send('Login realizado com sucesso!')
+                    res.send('Login realizado com sucesso.')
                 } else {
                     res.statusCode = 401;
                     res.send('Senha incorreta ou usuário não encontrado.')
                 }
             } catch (error) {
                 res.statusCode = 500;
-                res.send('Erro ao acessar a conta. Tente novamente.')
+                res.send('Erro ao tentar localizar sua conta. Tente novamente.')
             }
         } else {
             res.statusCode = 400;
-            res.send('Requisição inválida - Parâmetros incorretos.')
+            res.send('Parâmetros inválidos ou faltantes.')
         }
     } 
 }

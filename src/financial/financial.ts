@@ -43,7 +43,7 @@ export namespace FinancialManager{
             
             let idCrt = result.rows?.[0]?.FK_ID_CRT;
             if (!idCrt) {
-                throw new Error("Usuário com este email não encontrado.");
+                throw new Error("Não existe nenhum usuário com este email.");
             }
 
             let cardExists = await connection.execute(
@@ -67,7 +67,7 @@ export namespace FinancialManager{
             }
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro ao registrar o cartão de crédito.");
+            throw new Error("Erro ao tentar registrar o cartão de crédito.");
         }finally {
             if (connection){
                 try{
@@ -107,7 +107,7 @@ export namespace FinancialManager{
 
             let idCrt = resultId.rows?.[0]?.FK_ID_CRT;
             if (!idCrt) {
-                throw new Error("Usuário com este email não encontrado.");
+                throw new Error("Não existe nenhum usuário com este email.");
             };
 
             let resultBalance = await connection.execute<balanceResult>(
@@ -119,7 +119,7 @@ export namespace FinancialManager{
 
             let balance = resultBalance.rows?.[0]?.SALDO;
             if (balance === undefined || balance === null) {
-                throw new Error("Carteira do usuário não encontrada.");
+                throw new Error("Carteira do usuário não foi encontrada.");
             }
 
             balance += valor;
@@ -133,8 +133,7 @@ export namespace FinancialManager{
             );
 
             await connection.commit();
-            console.log("Resultados da adição: ", update);
-     
+            console.log("Resultados da atualização: ", update);
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
             throw new Error("Erro ao tentar adicionar fundos à carteira.");
@@ -195,11 +194,11 @@ export namespace FinancialManager{
 
                     let balance = resultBalance.rows?.[0]?.SALDO;
                     if (balance === undefined || balance === null) {
-                        throw new Error("Carteira do usuário não encontrada.");
+                        throw new Error("Não existe nenhum usuário com este email.");
                     }
 
                     if (valor > balance){
-                        throw new Error("Saldo em conta é menor que o valor que deseja sacar.");
+                        throw new Error("Saldo em conta é menor que o valor que se deseja sacar.");
                     }
 
                     if (valor <= 100){
@@ -225,11 +224,10 @@ export namespace FinancialManager{
                     )
 
                     await connection.commit();
-                    console.log("Resultados do saque: ", update);
-
+                    console.log("Resultados da atualização: ", update);
                 }
             } else {
-                throw new Error("Email não encontrado.");
+                throw new Error("Não existe nenhum usuário com este email.");
             }
 
             return valorTaxado;
@@ -260,18 +258,18 @@ export namespace FinancialManager{
                     await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
                     await addFunds(pEmail,pValor);
                     res.statusCode = 200;
-                    res.send('Crédito Adicionado Com sucesso.');
+                    res.send('Créditos adicionados com sucesso.');
                 } catch (error) {
                     res.statusCode = 500;
-                    res.send('Erro ao colocar crédito na conta. Tente novamente.');
+                    res.send('Erro ao tentar adicionar créditos na conta. Tente novamente.');
                 }
             }else{
                 res.statusCode = 400;
-                res.send('Parametros invalidos.');
+                res.send('Parâmetros inválidos ou faltantes.');
             }
         }else {
             res.statusCode = 400;
-            res.send('Parametros invalidos ou faltantes.');
+            res.send('Parâmetros inválidos ou faltantes.');
         }
 
     }
@@ -286,10 +284,10 @@ export namespace FinancialManager{
                 try {
                     const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
                     res.statusCode = 200;
-                    res.send(`Valor depositado na conta ${pContaBancaria} após a taxação: ${valorSacado}`);
+                    res.send(`Valor depositado na conta ${pContaBancaria} após a taxação: ${valorSacado}.`);
                 } catch (error) {
                     res.statusCode = 500;
-                    res.send('Erro ao sacar o dinheiro. Tente novamente.');
+                    res.send('Erro ao tentar sacar o dinheiro. Tente novamente.');
                 }
             } else {
                 res.statusCode = 400;
@@ -297,7 +295,7 @@ export namespace FinancialManager{
             }
         } else {
             res.statusCode = 400;
-            res.send('Parametros invalidos ou faltantes.');
+            res.send('Parâmetros inválidos ou faltantes.');
         }
     }
 }
