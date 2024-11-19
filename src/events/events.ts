@@ -1,6 +1,6 @@
 import { Request, RequestHandler, Response } from "express";
 import OracleDB from "oracledb";
-import dotenv from 'dotenv'; 
+import dotenv from 'dotenv';
 dotenv.config();
 
 export type Event = {
@@ -80,7 +80,9 @@ export namespace EventsManager{
         
     }
 
-    async function evaluateNewEvent(idEvento: number, status: string) {
+    const nodemailer = require('nodemailer');
+
+    async function evaluateNewEvent(idEvento: number, status: string, mensagem: string) {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -98,6 +100,44 @@ export namespace EventsManager{
                 {status, idEvento},
                 {autoCommit:false}
             )
+
+            if (status === "recusado"){
+                
+                interface fkIdUsrResult {
+                    FK_ID_USR: number;
+                };
+
+                let resultIdUsr = await connection.execute<fkIdUsrResult>(
+                    `SELECT FK_ID_USR
+                     FROM EVENTS
+                     WHERE ID_EVT = :idEvento`,
+                    {idEvento}
+                );
+    
+                let fkIdUsr = resultIdUsr.rows?.[0]?.FK_ID_USR;
+                if (!fkIdUsr) {
+                    throw new Error("Não foi encontrado o usuário criador desse email.");
+                };
+
+                interface emailUsrResult {
+                    EMAIL: string;
+                };
+
+                let resultEmail = await connection.execute<emailUsrResult>(
+                    `SELECT EMAIL
+                     FROM ACCOUNTS
+                     WHERE ID_USR = :fkIdUsr`,
+                    {fkIdUsr}
+                );
+
+                let email = resultEmail.rows?.[0]?.EMAIL;
+                if (!email) {
+                    throw new Error("Não foi encontrado o email do usuário.")
+                }
+
+                await sendRejectionEmail(email, mensagem);
+            }
+
             await connection.commit();
             console.log("Resultados da atualização: ", update);
         }catch (err) {
@@ -111,6 +151,34 @@ export namespace EventsManager{
                     console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
+        }
+    }
+
+    async function sendRejectionEmail(email: string, mensagem: string) {
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+            logger: true,
+            debug: true
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Evento Recusado',
+            text: mensagem
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log("Email enviado com sucesso.");
+        }catch (err) {
+            console.error("Erro ao enviar o email: ", err);
         }
     }
 
@@ -287,7 +355,7 @@ export namespace EventsManager{
             let resultIdEvent = await connection.execute<idEventResult>(
                 `SELECT ID_EVT
                  FROM EVENTS
-                 WHERE TITULO = :tituloEvento`,
+                 WHERE TITULO = :tituloEvento AND STATUS = 'aprovado'`,
                 {tituloEvento}
             );
 
@@ -420,7 +488,7 @@ export namespace EventsManager{
             let resultValorCota = await connection.execute<valorCotasResult>(
                 `SELECT VALOR_COTA
                  FROM EVENTS
-                 WHERE ID_EVT = :IdEvt`,
+                 WHERE ID_EVT = :IdEvt AND STATUS = 'aprovado'`,
                 {IdEvt}
             );
 
@@ -571,10 +639,11 @@ export namespace EventsManager{
     export const evaluateNewEventHandler:RequestHandler = async (req: Request, res: Response) => {
         const pIdEvento = Number(req.get('id-evento'));
         const pStatus = req.get('status');
+        const pMessage = req.get('mensagem');
 
-        if (!isNaN(pIdEvento) && pStatus){
+        if (!isNaN(pIdEvento) && pStatus && pMessage){
             try {
-                await evaluateNewEvent(pIdEvento, pStatus);
+                await evaluateNewEvent(pIdEvento, pStatus, pMessage);
                 res.statusCode = 200;
                 res.send('Evento avaliado com sucesso.');
             } catch (error) {
