@@ -20,12 +20,12 @@ CREATE TABLE ADMIN_ACCOUNTS (
 
 CREATE TABLE ACCOUNTS (
     id_usr NUMBER PRIMARY KEY,
+    fk_id_crt NUMBER,
     nome VARCHAR2(255),
     email VARCHAR2(255) UNIQUE,
     senha VARCHAR2(255),
     data_nasc VARCHAR2(10),
-    token VARCHAR2(255),
-    fk_id_crt NUMBER
+    token VARCHAR2(255)
 );
 
 CREATE TABLE WALLETS (
@@ -35,9 +35,9 @@ CREATE TABLE WALLETS (
 
 CREATE TABLE CREDIT_CARD (
     num_card NUMBER PRIMARY KEY,
+    fk_id_crt NUMBER,
     cvv NUMBER,
-    validade VARCHAR2(7),
-    fk_id_crt NUMBER
+    validade VARCHAR2(7)
 );
 
 CREATE TABLE EVENTS (
