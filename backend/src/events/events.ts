@@ -59,9 +59,9 @@ export namespace EventsManager{
                  (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA)
                  VALUES
                  (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, :categoria, 
-                 TO_DATE(:dataHoraInicio, 'dd/mm/yyyy'), 
-                 TO_DATE(:dataHoraFim, 'dd/mm/yyyy'), 
-                 TO_DATE(:dataEvento, 'dd/mm/yyyy'), 
+                 TO_DATE(:dataHoraInicio, 'yyyy-mm-dd'), 
+                 TO_DATE(:dataHoraFim, 'yyyy-mm-dd'), 
+                 TO_DATE(:dataEvento, 'yyyy-mm-dd'), 
                  'em espera', :valorCota)`,
                  {idUsr, titulo, descricao, categoria, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
                  {autoCommit: false}
@@ -290,7 +290,7 @@ export namespace EventsManager{
             `SELECT count(ID_EVT) as eventsQtty FROM EVENTS WHERE STATUS = 'aprovado'`
         );
 
-        await connection.close;
+        await connection.close();
         return eventsQtty;
     }
 

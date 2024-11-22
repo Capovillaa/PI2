@@ -316,7 +316,23 @@
                 }
             }
 
+            function findCurrentDate(){
+                const currentDate = new Date();
+                const currentDateFormatted = currentDate.toISOString().split("T")[0];
+                return currentDateFormatted;
+            }
+
+            function findDayBeforeEvent(date){
+                const eventDate = new Date(date);
+                const dayBeforeEvent = new Date(eventDate);
+                dayBeforeEvent.setDate(eventDate.getDate() - 1);
+                const dayBeforeEventFormatted = dayBeforeEvent.toISOString().split("T")[0];
+                return dayBeforeEventFormatted;
+            }
+
             async function requestAddNewEvent(title, description, date, price, categoria) {
+                currentDate = findCurrentDate();
+                dayBeforeEvent = findDayBeforeEvent(date);
                 try{
                     const h = new Headers();
                     h.append("Content-Type", "application/json");
@@ -326,8 +342,8 @@
                     h.append("descricao", description);
                     h.append("categoria", categoria);
                     h.append("valor-cota", price);
-                    h.append("data-hora-inicio", "20/11/2024");
-                    h.append("data-hora-fim", "22/11/2024");
+                    h.append("data-hora-inicio", currentDate);
+                    h.append("data-hora-fim", dayBeforeEvent);
                     h.append("data-evento", date);
 
                     const resAddNewEvent = await fetch("http://127.0.0.1:3000/addNewEvent", {
