@@ -379,53 +379,7 @@ export namespace EventsManager{
         await connection.close();
         return eventsQtty;
     }
-
-    async function getUser(email: string,connection: OracleDB.Connection){
-
-        let result = await connection.execute<UserAccount>(
-            `SELECT *
-             FROM ACCOUNTS
-             WHERE EMAIL = :email`,
-            {email}
-        );
-
-        let User = result.rows && result.rows[0] ? result.rows[0] : null;
-        return User;
-    }
-
-    async function getWallet(id_crt: number,connection: OracleDB.Connection){
-
-        let result = await connection.execute<Wallet>(
-            `SELECT *
-             FROM WALLETS
-             WHERE ID_CRT = :id_crt`,
-            {id_crt}
-        );
-
-        let Wallet = result.rows && result.rows[0] ? result.rows[0] : null;
-        return Wallet;
-    }
-
-    async function getEvent(idEvento:number,connection: OracleDB.Connection){
-
-        let result = await connection.execute<Events>(
-            `SELECT *
-             FROM EVENTS
-             WHERE ID_EVT = :idEvento AND STATUS = 'aprovado'`,
-            {idEvento}
-        );
-
-        let Event = result.rows && result.rows[0] ? result.rows[0] : null;
-        return Event;
-    }
-
-    function hasSufficientBalance(balance:number,valorCota:number,qtdCotas:number){
-        if(balance < (valorCota*qtdCotas)){
-            return false;
-        }
-        return true;
-    }
-
+    
     async function betOnEvent(email:string,idEvento:number,qtdCotas:number,escolha:string) {
 
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
