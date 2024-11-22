@@ -23,6 +23,7 @@ async function getUser(email: string,connection: OracleDB.Connection){
     );
 
     let User = result.rows && result.rows[0] ? result.rows[0] : null;
+    
     return User;
 }
 
@@ -106,7 +107,8 @@ function getWinnersPool(allWinnersBets: Bet[],Event: Events){
 export namespace EventsManager{
 
     async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
-    valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
+        valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
+        
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -117,21 +119,9 @@ export namespace EventsManager{
                 connectionString: process.env.ORACLE_CONN_STR
             });
 
-            interface AccountResult {
-                ID_USR: number;
-            }
-
-            let resultIdUsr = await connection.execute<AccountResult>(
-                `SELECT ID_USR
-                 FROM ACCOUNTS
-                 WHERE EMAIL = :email`,
-                {email}
-            );
-
-            let idUsr = resultIdUsr.rows?.[0]?.ID_USR;
-            if (!idUsr) {
-                throw new Error("Não existe nenhum usuário com este email.");
-            }
+            let User = await getUser(email,connection);
+            
+            let idUsr = User?.ID_USR;
 
             let insertion = await connection.execute(
                 `INSERT INTO EVENTS
@@ -147,7 +137,7 @@ export namespace EventsManager{
             );
             await connection.commit();
             console.log("Resultados da inserção: ", insertion);
-
+            
         }catch (err) {
             console.error("Erro do banco de dados: ", err);
             throw new Error("Erro ao tentar registrar o evento.");
