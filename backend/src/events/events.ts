@@ -1,5 +1,5 @@
 import { Request, RequestHandler, Response } from "express";
-import OracleDB from "oracledb";
+import OracleDB, { events } from "oracledb";
 import dotenv from 'dotenv';
 import { UserAccount } from "../Interfaces/interface";
 import { Wallet } from "../Interfaces/interface";
@@ -107,12 +107,10 @@ function getWinnersPool(allWinnersBets: Bet[],Event: Events){
 export namespace EventsManager{
 
     async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
-        valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) {
+        valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) : Promise<OracleDB.Result<unknown>> {
         
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
-
-        try {
             connection = await OracleDB.getConnection({
                 user: process.env.ORACLE_USER,
                 password: process.env.ORACLE_PASSWORD,
@@ -128,29 +126,18 @@ export namespace EventsManager{
                  (ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA)
                  VALUES
                  (SEQ_EVENTSPK.NEXTVAL, :idUsr, :titulo, :descricao, :categoria, 
-                 TO_DATE(:dataHoraInicio, 'yyyy/mm/dd hh24:mi:ss'), 
-                 TO_DATE(:dataHoraFim, 'yyyy/mm/dd hh24:mi:ss'), 
-                 TO_DATE(:dataEvento, 'YYYY-MM-DD'), 
+                 TO_DATE(:dataHoraInicio, 'yyyy-mm-dd'), 
+                 TO_DATE(:dataHoraFim, 'yyyy-mm-dd'), 
+                 TO_DATE(:dataEvento, 'yyyy-mm-dd'), 
                  'em espera', :valorCota)`,
                  {idUsr, titulo, descricao, categoria, dataHoraInicio, dataHoraFim, dataEvento, valorCota},
                  {autoCommit: false}
             );
-            await connection.commit();
-            console.log("Resultados da inserção: ", insertion);
             
-        }catch (err) {
-            console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro ao tentar registrar o evento.");
-        }finally {
-            if (connection){
-                try{
-                    await connection.close();
-                } catch (err) {
-                    console.error("Erro ao tentar fechar a conexão: ", err);
-                }
-            }
-        }
-        
+            await connection.commit();
+            await connection.close();
+            console.log("Resultados da inserção: ", insertion); 
+            return(insertion);
     }
 
     const nodemailer = require('nodemailer');
@@ -355,6 +342,88 @@ export namespace EventsManager{
                 }
             }
         }
+    }
+
+    async function getEventsQtty() : Promise<OracleDB.Result<unknown>> {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        
+        let connection = await OracleDB.getConnection({
+            user: process.env.ORACLE_USER,
+            password: process.env.ORACLE_PASSWORD,
+            connectString: process.env.ORACLE_CONN_STR
+        });
+
+        let eventsQtty = await connection.execute(
+            `SELECT count(ID_EVT) as eventsQtty FROM EVENTS WHERE STATUS = 'aprovado'`
+        );
+
+        await connection.close();
+        return eventsQtty;
+    }
+
+    async function getEventsByPage(page: number, pageSize: number): Promise<OracleDB.Result<unknown>> {
+        const startRecord = ((page - 1) * pageSize);
+
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection = await OracleDB.getConnection({
+            user: process.env.ORACLE_USER,
+            password: process.env.ORACLE_PASSWORD,
+            connectString: process.env.ORACLE_CONN_STR
+        });
+
+        let eventsQtty = await connection.execute(
+            `SELECT * FROM EVENTS WHERE STATUS = 'aprovado' ORDER BY ID_EVT OFFSET :startRecord ROWS FETCH NEXT :pageSize ROWS ONLY`,
+            [startRecord, pageSize]
+        );
+
+        await connection.close();
+        return eventsQtty;
+    }
+
+    async function getUser(email: string,connection: OracleDB.Connection){
+
+        let result = await connection.execute<UserAccount>(
+            `SELECT *
+             FROM ACCOUNTS
+             WHERE EMAIL = :email`,
+            {email}
+        );
+
+        let User = result.rows && result.rows[0] ? result.rows[0] : null;
+        return User;
+    }
+
+    async function getWallet(id_crt: number,connection: OracleDB.Connection){
+
+        let result = await connection.execute<Wallet>(
+            `SELECT *
+             FROM WALLETS
+             WHERE ID_CRT = :id_crt`,
+            {id_crt}
+        );
+
+        let Wallet = result.rows && result.rows[0] ? result.rows[0] : null;
+        return Wallet;
+    }
+
+    async function getEvent(idEvento:number,connection: OracleDB.Connection){
+
+        let result = await connection.execute<Events>(
+            `SELECT *
+             FROM EVENTS
+             WHERE ID_EVT = :idEvento AND STATUS = 'aprovado'`,
+            {idEvento}
+        );
+
+        let Event = result.rows && result.rows[0] ? result.rows[0] : null;
+        return Event;
+    }
+
+    function hasSufficientBalance(balance:number,valorCota:number,qtdCotas:number){
+        if(balance < (valorCota*qtdCotas)){
+            return false;
+        }
+        return true;
     }
 
     async function betOnEvent(email:string,idEvento:number,qtdCotas:number,escolha:string) {
@@ -568,7 +637,7 @@ export namespace EventsManager{
         const pDescricao = req.get('descricao');
         const pCategoria = req.get('categoria');
         const pValorCota = Number(req.get('valor-cota'));
-        const pDataHoraInicio = req.get('data-hora-inicio'); //Verificar se está correto
+        const pDataHoraInicio = req.get('data-hora-inicio');
         const pDataHoraFim = req.get('data-hora-fim');
         const pDataEvento = req.get('data-evento');
 
@@ -649,6 +718,30 @@ export namespace EventsManager{
             res.send('Erro ao tentar buscar os eventos. Tente novamente.');
         }
     }
+
+    export const getEventsQttyHandler: RequestHandler = async(req: Request, res: Response) => {
+        const eventsQtty = await getEventsQtty();
+        res.statusCode = 200;
+        res.send(eventsQtty.rows);
+    }
+
+    export const getEventsByPageHandler: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const pPage = parseInt(req.get('page') || '', 10);
+        const pPageSize = parseInt(req.get('pageSize') || '', 10);
+
+        if (isNaN(pPage) || isNaN(pPageSize) || pPage < 1 || pPageSize < 1) {
+            res.status(400).send('Parâmetros inválidos ou faltantes.');
+        }
+
+        const events = await getEventsByPage(pPage, pPageSize);
+
+        res.status(200).json(events.rows);
+    } catch (error) {
+        console.error('Erro em getEventsByPageHandler:', error);
+        res.status(500).send('Erro interno ao processar a solicitação.');
+    }
+};
 
     export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
         const pEmail = req.get('email');
