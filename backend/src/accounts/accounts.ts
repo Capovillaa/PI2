@@ -22,7 +22,7 @@ export namespace AccountsManager {
     }
 
     function validateBirthDate(birthDate: string): boolean{
-        const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         return dateRegex.test(birthDate);
     }
 
@@ -57,7 +57,7 @@ export namespace AccountsManager {
                 `INSERT INTO ACCOUNTS
                     (ID_USR,NOME,EMAIL,SENHA,DATA_NASC,TOKEN,FK_ID_CRT)
                 VALUES
-                    (SEQ_ACCOUNTSPK.NEXTVAL,:nome,:email,:hashedPassword,TO_DATE(:dataNascimento, 'DD-MM-YYYY'),dbms_random.string('x',32),SEQ_WALLETSFK.NEXTVAL)`,
+                    (SEQ_ACCOUNTSPK.NEXTVAL,:nome,:email,:hashedPassword,TO_DATE(:dataNascimento, 'YYYY-MM-DD'),dbms_random.string('x',32),SEQ_WALLETSFK.NEXTVAL)`,
                 {nome,email,hashedPassword,dataNascimento},
                 {autoCommit: false}
             );

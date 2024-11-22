@@ -308,6 +308,7 @@
                 console.log(pDescription);
                 console.log(pDate);
                 console.log(pPrice);
+                
                 console.log(pCategoria);
                 if (pTitle && pDescription && pDate && !isNaN(pPrice) && pCategoria !== "Selecione sua categoria") {
                     await requestAddNewEvent(pTitle, pDescription, pDate, pPrice, pCategoria);
