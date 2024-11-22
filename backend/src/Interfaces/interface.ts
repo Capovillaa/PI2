@@ -1,4 +1,3 @@
-
 export interface UserAccount{
     ID_USR:number;
     NOME:string;
@@ -8,12 +7,10 @@ export interface UserAccount{
     TOKEN:string;
     FK_ID_CRT:number;
 };
-
 export interface Wallet{
     ID_CRT:number;
     SALDO:number;
 }
-
 export interface Events{
     ID_EVT:number;
     FK_ID_USR:number;
