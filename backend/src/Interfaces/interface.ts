@@ -1,4 +1,3 @@
-
 export interface UserAccount{
     ID_USR:number;
     NOME:string;
@@ -25,4 +24,12 @@ export interface Events{
     DATA_EVT:string;
     STATUS:string;
     VALOR_COTA:number;
+}
+
+export interface Bet{
+    ID_APT:number;
+    QTD_COTAS:number;
+    FK_ID_EVT:number;
+    FK_ID_USR:number;
+    ESCOLHA:string;
 }

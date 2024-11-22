@@ -4,26 +4,105 @@ import dotenv from 'dotenv';
 import { UserAccount } from "../Interfaces/interface";
 import { Wallet } from "../Interfaces/interface";
 import { Events } from "../Interfaces/interface";
+import { Bet } from "../Interfaces/interface";
 dotenv.config();
 
-export type Event = {
-    id_evento: number | undefined; 
-    id_usuario: number;            
-    titulo: string;                 
-    descricao: string;
-    categoria: string;
-    valor_cota: number;             
-    data_hora_inicio: string;        
-    data_hora_fim: string;          
-    data_evento: string;              
-    status_evento: string;          
-};
 
 function validateEmail(email: string) :boolean{
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
+async function getUser(email: string,connection: OracleDB.Connection){
+
+    let result = await connection.execute<UserAccount>(
+        `SELECT *
+         FROM ACCOUNTS
+         WHERE EMAIL = :email`,
+        {email}
+    );
+
+    let User = result.rows && result.rows[0] ? result.rows[0] : null;
+    return User;
+}
+
+async function getWallet(id_crt: number,connection: OracleDB.Connection){
+
+    let result = await connection.execute<Wallet>(
+        `SELECT *
+         FROM WALLETS
+         WHERE ID_CRT = :id_crt`,
+        {id_crt}
+    );
+
+    let Wallet = result.rows && result.rows[0] ? result.rows[0] : null;
+    return Wallet;
+}
+
+async function getEvent(idEvento:number,connection: OracleDB.Connection){
+
+    let result = await connection.execute<Events>(
+        `SELECT *
+         FROM EVENTS
+         WHERE ID_EVT = :idEvento AND STATUS = 'aprovado'`,
+        {idEvento}
+    );
+
+    let Event = result.rows && result.rows[0] ? result.rows[0] : null;
+    return Event;
+}
+
+function hasSufficientBalance(balance:number,valorCota:number,qtdCotas:number){
+    if(balance < (valorCota*qtdCotas)){
+        return false;
+    }
+    return true;
+}
+
+async function getAllBets(IdEvt: number,connection: OracleDB.Connection){
+
+    let result = await connection.execute<Bet>(
+        `SELECT *
+         FROM BETS
+         WHERE FK_ID_EVT = :IdEvt`,
+        [IdEvt]
+    );
+        //esta dupla interrogacao faz com que caso o result.rows seja nulo ou undefined ela atribui um array padrao para allBet = []
+    let allBets: Bet[] = result.rows??[];
+    return allBets;
+}
+async function geAllWinnersBets(Event: Events,ResultadoEvento: string,connection: OracleDB.Connection){
+    let result = await connection.execute<Bet>(
+        `SELECT *
+         FROM BETS
+         WHERE FK_ID_EVT = :IdEvt AND ESCOLHA = :ResultadoEvento`,
+        [Event.ID_EVT, ResultadoEvento],
+    );
+    let allWinnersBets: Bet[] = result.rows??[];
+    return allWinnersBets;
+}
+function getPool(allBets: Bet[],Event: Events){
+    
+    let pool = 0;
+
+    for(const row of allBets){
+        pool += (Event.VALOR_COTA* row.QTD_COTAS);
+        
+    }
+    console.log(pool);
+    return pool;
+}
+
+function getWinnersPool(allWinnersBets: Bet[],Event: Events){
+    
+    let winnersPool = 0;
+
+    for(const row of allWinnersBets){
+        winnersPool += (row.QTD_COTAS * Event.VALOR_COTA);
+    }
+
+    return winnersPool;
+}
 export namespace EventsManager{
 
     async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
@@ -288,53 +367,7 @@ export namespace EventsManager{
         }
     }
 
-    async function getUser(email: string,connection: OracleDB.Connection){
-
-        let result = await connection.execute<UserAccount>(
-            `SELECT *
-             FROM ACCOUNTS
-             WHERE EMAIL = :email`,
-            {email}
-        );
-
-        let User = result.rows && result.rows[0] ? result.rows[0] : null;
-        return User;
-    }
-
-    async function getWallet(id_crt: number,connection: OracleDB.Connection){
-
-        let result = await connection.execute<Wallet>(
-            `SELECT *
-             FROM WALLETS
-             WHERE ID_CRT = :id_crt`,
-            {id_crt}
-        );
-
-        let Wallet = result.rows && result.rows[0] ? result.rows[0] : null;
-        return Wallet;
-    }
-
-    async function getEvent(idEvento:string,connection: OracleDB.Connection){
-
-        let result = await connection.execute<Events>(
-            `SELECT *
-             FROM EVENTS
-             WHERE ID_EVT = :idEvento AND STATUS = 'aprovado'`,
-            {idEvento}
-        );
-
-        let Event = result.rows && result.rows[0] ? result.rows[0] : null;
-        return Event;
-    }
-
-    function hasSufficientBalance(balance:number,valorCota:number,qtdCotas:number){
-        if(balance < (valorCota*qtdCotas)){
-            return false;
-        }
-        return true;
-    }
-
-    async function betOnEvent(email:string,idEvento:string,qtdCotas:number,escolha:string) {
+    async function betOnEvent(email:string,idEvento:number,qtdCotas:number,escolha:string) {
 
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -438,12 +471,13 @@ export namespace EventsManager{
             }
         }
     }
-
+    
     async function finishEvent(IdEvt: number,ResultadoEvento:string) {
+        
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
-        let pool:number = 0;
+        
         let winnerPool:number = 0;
         try{
             connection = await OracleDB.getConnection({
@@ -452,85 +486,26 @@ export namespace EventsManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            interface Bet {
-                ID_APT: number;
-                QTD_COTAS: number;
-                FK_ID_EVT: number;
-                FK_ID_USR: number;
-                ESCOLHA: string;
-            }
+            let allBets:Bet[] = await getAllBets(IdEvt,connection);
+            let Event = await getEvent(IdEvt,connection);
+            
+            if(Event !== null){
 
-            interface valorCotasResult{
-                VALOR_COTA: number;
-            }
-
-            const allBets = await connection.execute<Bet>(
-                `SELECT *
-                 FROM BETS
-                 WHERE FK_ID_EVT = :IdEvt`,
-                [IdEvt],
-                { outFormat: OracleDB.OUT_FORMAT_OBJECT }
-            );
-
-            let resultValorCota = await connection.execute<valorCotasResult>(
-                `SELECT VALOR_COTA
-                 FROM EVENTS
-                 WHERE ID_EVT = :IdEvt AND STATUS = 'aprovado'`,
-                {IdEvt}
-            );
-
-            let valorCota = resultValorCota.rows?.[0]?.VALOR_COTA;
-            if (!valorCota) {
-                throw new Error("Evento com parâmetros faltantes.");
-            };
-
-            //rows: [{ ID_APT: 1, QTD_COTAS: ? , FK_ID_EVT: ?,FK_ID_USR: ?,ESCOLHA: ? }]
-
-            if(allBets.rows && allBets.rows.length > 0){
-                for(const row of allBets.rows){
-                    let QTD_COTAS: number = row.QTD_COTAS as number;
-                    pool += (QTD_COTAS * valorCota);
-                }
-                console.log(pool);
-            }else{
-                throw new Error("Nenhuma aposta encontrada.");
-            }
-
-            const allWinnersBets = await connection.execute<Bet>(
-                `SELECT *
-                 FROM BETS
-                 WHERE FK_ID_EVT = :IdEvt AND ESCOLHA = :ResultadoEvento`,
-                [IdEvt, ResultadoEvento],
-                { outFormat: OracleDB.OUT_FORMAT_OBJECT }
-            );
-
-            if(allWinnersBets.rows && allWinnersBets.rows.length > 0){
-                for(const row of allWinnersBets.rows){
-                    let QTD_COTAS: number = row.QTD_COTAS as number;
-                    winnerPool += (QTD_COTAS * valorCota);
-                }
-                console.log(winnerPool);
-            }else{
-                throw new Error("Nenhuma aposta encontrada.");
-            }
-
-            if(allWinnersBets.rows && allWinnersBets.rows.length > 0){
-                for(const row of allWinnersBets.rows){
-                    let QTD_COTAS: number = row.QTD_COTAS as number;
-                    let FK_ID_USR: number = row.FK_ID_USR as number;
+                let pool = getPool(allBets,Event);
+                let allWinnersBets = await geAllWinnersBets(Event,ResultadoEvento,connection)
+                let winnersPool =  getWinnersPool(allWinnersBets,Event);
+                
+                for(const row of allWinnersBets){
 
                     interface idCrtResult {
                         FK_ID_CRT: number;
                     }
 
-                    interface balanceResult {
-                        SALDO: number;
-                    }
-
+                    let FK_ID_USR = row.FK_ID_USR;
                     let resultIdCrt = await connection.execute<idCrtResult>(
                         `SELECT FK_ID_CRT
-                         FROM ACCOUNTS
-                         WHERE ID_USR = :FK_ID_USR`,
+                        FROM ACCOUNTS
+                        WHERE ID_USR = :FK_ID_USR`,
                         {FK_ID_USR}
                     );
 
@@ -538,10 +513,14 @@ export namespace EventsManager{
                     if (!idCrt) {
                         throw new Error("Carteira do usuário não está registrada.");
                     };
+
+                    interface balanceResult {
+                        SALDO: number;
+                    }
                     let resultBalance = await connection.execute<balanceResult>(
                         `SELECT SALDO
-                         FROM WALLETS
-                         WHERE ID_CRT = :idCrt`,
+                            FROM WALLETS
+                            WHERE ID_CRT = :idCrt`,
                         {idCrt}
                     );
             
@@ -550,8 +529,8 @@ export namespace EventsManager{
                         throw new Error("Carteira do usuário não encontrada.");
                     }
 
-                    let valorAposta = valorCota * QTD_COTAS;
-                    let proportion = valorAposta/winnerPool;
+                    let valorAposta = Event.VALOR_COTA * row.QTD_COTAS;
+                    let proportion = valorAposta/winnersPool;
                     let newBalance = pool * proportion;
                     balance += newBalance;
 
@@ -559,26 +538,26 @@ export namespace EventsManager{
 
                     let update = await connection.execute(
                         `UPDATE WALLETS
-                         SET SALDO = :balance
-                         WHERE ID_CRT = :idCrt`,
+                            SET SALDO = :balance
+                            WHERE ID_CRT = :idCrt`,
                         {balance, idCrt},
                         {autoCommit: false}
                     );
                     await connection.commit();
-
+                    
+                    let updateStatus = await connection.execute(
+                        `UPDATE EVENTS
+                            SET STATUS = 'finalizado'
+                            WHERE ID_EVT = :idEvt`,
+                        {IdEvt},
+                        {autoCommit: false}
+                    );
+                    await connection.commit();
                 }
-            }else{
-                throw new Error("Nenhuma aposta encontrada.");
-            }
 
-            let updateStatus = await connection.execute(
-                `UPDATE EVENTS
-                 SET STATUS = 'finalizado'
-                 WHERE ID_EVT = :idEvt`,
-                {IdEvt},
-                {autoCommit: false}
-            );
-            await connection.commit();
+            }else{
+                throw new Error("Evento não Existe.");
+            }    
         }catch(err){
             console.log("Erro do banco de dados: ", err);
             throw new Error("Erro ao tentar pegar a premiação do evento.");
@@ -683,7 +662,7 @@ export namespace EventsManager{
 
     export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
         const pEmail = req.get('email');
-        const pidEvento = req.get('id_evento');
+        const pidEvento = parseInt(req.get('id_evento') || '0');
         const pQtdCotas = parseInt(req.get('qtd_cotas') || '0');
         const pEscolha = req.get('escolha');
 
@@ -726,8 +705,8 @@ export namespace EventsManager{
     }
 
     export const finishEventHandler: RequestHandler = async (req : Request, res : Response) => {
-        const pIdAdmin = Number(req.get('id_admin'));
-        const pIdEvt = Number(req.get('id_evt'));
+        const pIdAdmin = parseInt(req.get('id_admin') || '0');
+        const pIdEvt = parseInt(req.get('id_evt') || '0');
         const pResultadoEvento = req.get('resultado')?.toLowerCase();
 
         if(!isNaN(pIdAdmin) && !isNaN(pIdEvt) && pResultadoEvento){
