@@ -118,7 +118,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Novo evento</h1>
+                    <h1 class="modal-title fs-5" id="eventModalLabel">Novo evento</h1>
                     <button type="button" class="btn-close"
                      data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
@@ -161,6 +161,40 @@
                     <button type="button" class="btn btn-secondary"
                      data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="saveNewEvent();">Salvar</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="modal fade" id="betOnEventModal" tabindex="-1"
+         aria-label="Modal de aposta em eventos" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="betModalLabel">Apostar</h1>
+                    <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Preencha todos os campos para apostar no evento</p>
+                    <form>
+                        <div class="mb-3">
+                            <label for="betQtty" class="form-label">Quantidade de cotas</label>
+                            <input type="text" class="form-control" id="betQtty">
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-select" id="betChoice" aria-label="Seleção de escolha">
+                                <option selected>Selecione sua escolha</option>
+                                <option value="sim">Sim</option>
+                                <option value="não">Não</option>
+                            </select>                            
+                        </div>
+                        <input type="hidden" id="modalEventId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                     data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="betOnEvent();">Confirmar Aposta</button>
                 </div>
             </div>
             </div>
@@ -279,13 +313,25 @@
                         <td class="text-left">${event.DATA_EVT}</td> <!-- Usando o campo DATA_EVT -->
                         <td class="text-end">${price.toFixed(2).replace('.',',')}</td>
                         <td class="text-left">${event.CATEGORIA}</td>
-                        <td type="button" class="btn btn-outline-secondary"
-                            style="float:right;" data-bs-toggle="modal"
-                            data-bs-target="#addNewEventModal">
-                            <i class="fas fa-plus"></i> Apostar
-                        </button>
+                        <td>
+                            <button type="button" class="btn btn-outline-secondary"
+                                    style="float:right;" 
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#betOnEventModal"
+                                    data-id="${event.ID_EVT}" 
+                                    onclick="setEventId(this)">
+                                <i class="fas fa-plus"></i> Apostar
+                            </button>
+                        </td>
                     </tr>`;
                 tableEvents.getElementsByTagName('tbody')[0].insertAdjacentHTML('beforeend', newEventRow);
+            }
+
+            /* setEventId pega o ID do evento selecionado*/
+            function setEventId(idEvento){
+                const eventId = idEvento.getAttribute("data-id");
+                document.getElementById("modalEventId").value = eventId;
+                console.log("Id do evento selecionado: ", eventId);
             }
 
             function isNumber(value){
@@ -295,6 +341,12 @@
             function closeModalAddEvents(){
                 var modalNewEvent = document.getElementById('addNewEventModal');
                 var modal = bootstrap.Modal.getInstance(modalNewEvent)
+                modal.hide();
+            }
+
+            function closeModalBetOnEvent(){
+                var modalBetOnEvent = document.getElementById('betOnEventModal');
+                var modal = bootstrap.Modal.getInstance(modalBetOnEvent)
                 modal.hide();
             }
 
@@ -308,8 +360,8 @@
                 console.log(pDescription);
                 console.log(pDate);
                 console.log(pPrice);
-                
                 console.log(pCategoria);
+
                 if (pTitle && pDescription && pDate && !isNaN(pPrice) && pCategoria !== "Selecione sua categoria") {
                     await requestAddNewEvent(pTitle, pDescription, pDate, pPrice, pCategoria);
                 } else {
@@ -356,6 +408,48 @@
                         console.log("Evento adicionado com sucesso!");
                         closeModalAddEvents();
                         requestEvents(numPages);
+                    } else {
+                        const errorText = await resAddNewEvent.text();
+                        console.error("Erro ao adicionar evento:", errorText);
+                    }
+                } catch (error) {
+                    console.log("Erro na requisição:", error);
+                }
+            }
+
+            async function betOnEvent() {
+                var pIdEvento = parseInt(document.getElementById("modalEventId").value);
+                var pQtdCotas = parseInt(document.getElementById("betQtty").value);
+                var pEscolha = document.getElementById("betChoice").value;
+                console.log("ID do Evento:", pIdEvento);
+                console.log("Quantidade de Cotas:", pQtdCotas);
+                console.log("Escolha:", pEscolha);
+
+                if (pIdEvento && pQtdCotas && pEscolha && pEscolha !== "Selecione sua escolha") {
+                    await requestBetOnEvent(pIdEvento, pQtdCotas, pEscolha);
+                } else {
+                    alert('Preencha todos os campos corretamente.');
+                }
+            }
+
+            async function requestBetOnEvent(idEvento, qtdCotas, escolha) {
+                try {
+                    const h = new Headers();
+                    h.append("Content-Type", "application/json");
+
+                    h.append("email", "eduardo.fg1@puccampinas.edu.br");
+                    h.append("id_evento", idEvento);
+                    h.append("qtd_cotas", qtdCotas);
+                    h.append("escolha", escolha);
+
+                    const resBetOnEvent = await fetch("http://127.0.0.1:3000/betOnEvent", {
+                        method: "POST",
+                        headers: h,
+                    })
+
+                    if(resBetOnEvent.ok){
+                        console.log("Aposta realizada com sucesso!");
+                        closeModalBetOnEvent();
                     } else {
                         const errorText = await resAddNewEvent.text();
                         console.error("Erro ao adicionar evento:", errorText);
