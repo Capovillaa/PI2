@@ -12,7 +12,6 @@
         <link rel="stylesheet"
          href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" 
          crossorigin="anonymous">
-         <link href="base.css" rel="stylesheet"/>
         <style>
             .custom-input::placeholder{
                 color: #0d6efd;
@@ -20,16 +19,23 @@
         </style>
     </head>
     <body>
-        <div class="top-rectangle">
-            <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
-            <div class="right-controls">
-                <button type="button" class="buttonPlus">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <input class="inputSaldo" type="text" 
-                placeholder="0,00" aria-label="Saldo 0,00" disabled>
+        <nav class="navbar bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img
+                     src="https://www.puc-campinas.edu.br/wp-content/uploads/2019/05/symbol-logo-puc.png"
+                     alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+                     PUC BETS
+                </a>
+                <div class="d-flex justify-content-end align-items-center">
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-plus"></i></button>
+                    <input class="form-control custom-input" type="text" 
+                     placeholder="0,00" aria-label="Saldo 0,00" disabled 
+                     style="width: 30%; text-align: center;">
+                </div>
             </div>
-        </div>
+        </nav>
 
         <div id="loadingSpinner" class="container" style="display: none;">
             <div id="loading" class="d-flex justify-content-center" style="padding-top: 20px;">
@@ -42,26 +48,26 @@
         <div id="mainContent" class="container-fluid" style="padding-top: 20px;">
             <div class="row">
                 <div class="col">
-                    <h2>Eventos</h2>
+                    <h3>Eventos</h3>
                 </div>
                 <div class="col-md-auto">
                     <div class="input-group">
-                        <input class="inputPesquisa" type="text" 
+                        <input type="text" class="form-control"
                          placeholder="Buscar evento...">
-                        <button type="button" class="buttonPlus">
-                          <i class="fas fa-search"></i></button>
+                        <button type="button" class="btn btn-secondary">
+                          <i class="fas fa-search"></i> Buscar</button>
                     </div>
                 </div>
                 <div class="col col-lg-1">
-                    <button type="button" class="buttonPlusEvent"
+                    <button type="button" class="btn btn-outline-primary"
                      style="float:right;" data-bs-toggle="modal"
                      data-bs-target="#addNewEventModal">
-                     <i class="fas fa-plus"></i></button>
+                     <i class="fas fa-plus"></i> Novo</button>
                 </div>
             </div>
             <div class="row align-items-center">
                 <div class="col">
-                    <table id="tableEvents" class="tableEvents">
+                    <table id="tableEvents" class="table">
                         <thead>
                             <tr>
                                 <th scope="col" class="text-left">Título</th>
@@ -69,7 +75,6 @@
                                 <th scope="col" class="text-left">Data do evento</th>
                                 <th scope="col" class="text-end">Valor da cota</th>
                                 <th scope="col" class="text-left">Categoria</th>
-                                <th scope="col" class="text-left">Apostar</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -122,27 +127,27 @@
                     <form>
                         <div class="mb-3">
                             <label for="eventTitle" class="form-label">Titulo</label>
-                            <input type="text" class="campo-formulario" id="eventTitle">
+                            <input type="text" class="form-control" id="eventTitle">
                         </div>
                         <div class="mb-3">
                             <label for="eventDescription" class="form-label">Descrição</label>
-                            <input type="text" class="campo-formulario" id="eventDescription">
+                            <input type="text" class="form-control" id="eventDescription">
                         </div>
                         <div class="mb-3">
                             <label for="eventDate" class="form-label">Data do evento</label>
-                            <input type="date" class="campo-formulario w-8"
+                            <input type="date" class="form-control w-8"
                              id="eventDate" aria-describedby="eventDateHelp">
                         </div>
                         <div class="mb-3">
                             <label for="eventPrice" class="form-label">Valor da cota</label>
-                            <input type="text" class="campo-formulario w-25"
+                            <input type="text" class="form-control w-25"
                              id="eventPrice" aria-describedby="eventPriceHelp">
                             <div id="eventPriceHelp" class="form-text">
                                 Exemplo: 19.90
                             </div>
                         </div>
                         <div class="mb-3">
-                            <select class="form-select campo-formulario" id="eventCategoria" aria-label="Seleção de categoria">
+                            <select class="form-select" id="eventCategoria" aria-label="Seleção de categoria">
                                 <option selected>Selecione sua categoria</option>
                                 <option value="Futebol">Futebol</option>
                                 <option value="E-Sports">E-Sports</option>
@@ -165,7 +170,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-1" id="betModalLabel">Apostar</h1>
+                    <h1 class="modal-title fs-5" id="betModalLabel">Apostar</h1>
                     <button type="button" class="btn-close"
                         data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
@@ -174,10 +179,10 @@
                     <form>
                         <div class="mb-3">
                             <label for="betQtty" class="form-label">Quantidade de cotas</label>
-                            <input type="text" class="campo-formulario" id="betQtty">
+                            <input type="text" class="form-control" id="betQtty">
                         </div>
                         <div class="mb-3">
-                            <select class="form-select campo-formulario" id="betChoice" aria-label="Seleção de escolha">
+                            <select class="form-select" id="betChoice" aria-label="Seleção de escolha">
                                 <option selected>Selecione sua escolha</option>
                                 <option value="sim">Sim</option>
                                 <option value="não">Não</option>
@@ -309,7 +314,7 @@
                         <td class="text-end">${price.toFixed(2).replace('.',',')}</td>
                         <td class="text-left">${event.CATEGORIA}</td>
                         <td>
-                            <button type="button" class="buttonPlusEventBet"
+                            <button type="button" class="btn btn-outline-secondary"
                                     style="float:right;" 
                                     data-bs-toggle="modal"
                                     data-bs-target="#betOnEventModal"
@@ -460,14 +465,7 @@
                     requestEvents(page);
                 }
             });
-            /* PArte da Session que obriga a fazer login antes de entrar
-            window.onload = function() {
-                const userLoggedIn = sessionStorage.getItem("userLoggedIn");
-                if (userLoggedIn !== "true") {
-                    window.location.href = "login.html";
-                }
-            };
-            */
+
         </script>
     </body>
 </html>

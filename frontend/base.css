@@ -1,0 +1,354 @@
+
+/* BODYS */
+body {
+    background-color: #a1bfe0;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    padding-top: 120px;
+    font-size: 30px;
+}
+
+.bodyForms {
+    background-image: url("../imagens/moedasInteira.png");
+    background-size:auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;  
+    align-items: center;      
+    height: 100vh;     
+    margin: 0;
+
+}
+.bodyPagina1 {
+    background-image: url("../imagens/GvEDnG0.png");
+    background-size: 2000px 1000px;
+    background-position: right;
+    background-repeat: no-repeat;
+}
+
+/*tabela de saldo no topo da tela*/
+.right-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: absolute;
+    right: 20px;
+    top: 30px;
+}
+
+.custom-input {
+    width: 100px;
+    text-align: center;
+}
+
+/*Retangulos */
+.top-rectangle {
+    width: 100%;          
+    height: 100px;        
+    background-color: #4D85D5;  
+    position: fixed;      
+    top: 0;               
+    left: 0;              
+    z-index: 1000;
+    display: flex;       
+    justify-content: space-between;  
+    align-items: center;  
+    padding: 0 20px;      
+}
+
+
+.top-rectangle a {
+    color: #fae5ca;   
+    text-decoration: none;  
+    font-size: 1.2em;  
+}
+
+.top-rectangle a:hover {
+    text-decoration: underline;  
+}
+
+
+.rectangleForms {
+    background-color: #4D85D5;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    width: 60%;
+    position: center;
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    color:#fae5ca;
+  }
+  
+  input {
+    padding: 5px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 5px;
+  }
+  
+  button {
+    background-color:#88A8D6;
+    color:#fae5ca;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color:#6781a5; 
+    color: #fae5ca; 
+    }
+}
+
+/*TABELAS*/
+.tableEvents {
+    width: 100%; 
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1rem;
+    text-align: left;
+    background-color: #88A8D6;
+    color: #fae5ca;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tableEvents th,
+.tableEvents td {
+    padding: 10px;
+    border-bottom: 1.5px solid #4D85D5;
+}
+
+.tableEvents th {
+    background-color: #4D85D5;
+    color: #fae5ca;
+    text-transform: uppercase;
+}
+
+.tableEvents tr:hover {
+    background-color: #9abae7; 
+    color: #fff;
+}
+
+
+/*classes padroes*/
+h1 {
+    font-size: 2em;
+}
+
+h2 {
+    font-size: 150%;
+    color: #fae5ca;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+.pPage1{
+    
+    font-weight: bold;
+    margin-top: 50px;
+    margin-bottom: 30px; 
+    max-width: 75%; 
+    margin-left: 3%; 
+    margin-right: auto; 
+}
+
+.p2Page1{
+    
+    font-weight: bold;
+    margin-top: 0px;
+    margin-bottom: 20px; 
+    max-width: 60%; 
+    margin-left: 3%; 
+    margin-right: auto; 
+    font-size: 50px;
+}
+
+.inputSaldo {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    width: 100px;
+    font-size: 30px;
+    text-align: center;
+}
+
+.inputSaldo::placeholder {
+    color:#fae5ca;
+    opacity: 1;
+}
+
+.inputPesquisa {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 30px;
+    text-align: center;
+    background-color: #4D85D5;
+    color: #fae5ca;
+}
+
+.inputPesquisa::placeholder {
+    color:#fae5ca;
+    opacity: 1;
+}
+
+.campo-formulario {
+    color: black;
+    background-color: #a1bfe0;
+    border-radius: 5px; 
+    padding: 10px;
+    font-size: 1rem;
+    width: 100%;
+}
+
+
+/*botoes*/
+.button {
+    background-color: #ff7d00; 
+    color: #fae5ca; 
+    padding: 30px 50px; 
+    border: none; 
+    border-radius: 5px; 
+    font-size: 30px; 
+    cursor: pointer; 
+    margin-top: 3%; 
+    margin-left: 15%;
+    
+}
+.button:hover {
+    background-color: #e06a00; 
+}
+
+.buttonPUCBets {
+    font-size: 2em; 
+}
+.pucBetsButton .puc {
+    color: #ff7d00;
+}
+
+.pucBetsButton .bets {
+    color: #fae5ca;
+}
+
+.buttonPUCBets:hover .puc {
+    color: #974a01
+}
+
+.buttonPUCBets:hover .bets {
+    color: rgb(209, 203, 178);
+}
+
+.buttonPlus {
+    background-color:#88A8D6;
+    color:#fae5ca;
+    padding: 1px 7px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+
+}
+.buttonPlus:hover {
+    background-color:#6781a5; 
+    color: #fae5ca; 
+}
+
+.buttonPlusEvent {
+    background-color:#88A8D6;
+    color:#fae5ca;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+
+}
+.buttonPlusEvent:hover {
+    background-color:#6781a5; 
+    color: #fae5ca; 
+}
+
+.buttonPlusEventBet {
+    background-color:#4D85D5;
+    color:#fae5ca;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+
+}
+.buttonPlusEventBet:hover {
+    background-color:#305fa0; 
+    color: #fae5ca; 
+}
+
+/*cores*/
+.orange {
+    color: #ff7d00;
+}
+
+.darkblue {
+    color: #4D85D5;
+}
+.eggyolk {
+    color: #fae5ca;
+}
+
+.middleblue {
+    color: #88A8D6;
+}
+
+.puc {
+    color: #ff7d00;
+}
+
+.bets {
+    color: #fae5ca;
+}
+
+
+/*Mensagens*/
+.messagebox {
+    display: none;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.messagebox p{
+    margin: 5px;
+    padding: 0;
+}
+
+.messagebox.error {
+    background-color: #e85f5c;
+    border: 3px solid #E84B48;
+    color: #fae5ca;
+}
+
+.messagebox.success {
+    background-color: rgb(106, 194, 106);
+    border: 3px solid green;
+    color: #fae5ca;
+}
+
+/*MODAL*/
+.modal-content {
+    background-color: #4D85D5;
+    color: #fae5ca;
+    border-radius: 10px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+}
+
+
+
+
+
