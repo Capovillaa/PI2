@@ -1,4 +1,6 @@
 import {Request,Response,RequestHandler} from "express";
+import { UserAccount } from "../Interfaces/interface";
+import { Wallet } from "../Interfaces/interface";
 import OracleDB from "oracledb";
 import bcrypt from 'bcryptjs';
 import dotenv from "dotenv";
@@ -17,6 +19,53 @@ export namespace FinancialManager{
             return true;
         }
         return false;
+    }
+
+    async function getSaldo(idUsr:number){
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+            
+            let resultUser = await connection.execute<UserAccount>(
+                `SELECT *
+                 FROM ACCOUNTS
+                 WHERE ID_USR = :idUsr`,
+                {idUsr}
+            );
+
+            let User = resultUser.rows && resultUser.rows[0] ? resultUser.rows[0] : null;
+
+            let fkIdCrt = User?.FK_ID_CRT;
+
+            let resultWallet = await connection.execute<Wallet>(
+                `SELECT *
+                 FROM WALLETS
+                 WHERE ID_CRT = :fkidcrt`,
+                {fkIdCrt}
+            )
+
+            let Wallet = resultWallet.rows && resultWallet.rows[0] ? resultWallet.rows[0] : null;
+
+            let saldo = Wallet?.SALDO;
+
+            return saldo;
+        } catch (error) {
+            console.error("Erro do banco de dados: ", error);
+            throw new Error("Erro ao buscar saldo na carteira.");
+        } finally {
+            if (connection){
+                try{
+                    await connection.close();
+                } catch (err) {
+                    console.error("Erro ao tentar fechar a conexão: ", err);
+                }
+            }
+        }
     }
 
     async function addCreditCard(email:string,cardNumber:number,cvv:number,expirationDate:string){
@@ -243,6 +292,22 @@ export namespace FinancialManager{
                     console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
+        }
+    }
+
+    export const getSaldoHandler:RequestHandler = async (req:Request, res:Response) => {
+        const pIdUsr = Number(req.get("id_usr"));
+        if (!isNaN(pIdUsr)){
+            try {
+                let saldo = await getSaldo(pIdUsr);
+                res.status(200).json({saldo});
+            } catch (error) {
+                res.statusCode = 500;
+                res.send('Erro ao tentar localizar o saldo. Tente novamente');
+            }
+        } else {
+            res.statusCode = 400;
+            res.send('Parâmetros inválidos ou faltantes.');
         }
     }
 
