@@ -19,15 +19,15 @@
             }
         </style>
     </head>
-    <body>
+    <body onload="getSaldo()">
         <div class="top-rectangle">
             <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
             <div class="right-controls">
                 <button type="button" class="buttonPlus">
                     <i class="fas fa-plus"></i>
                 </button>
-                <input class="inputSaldo" type="text" 
-                placeholder="0,00" aria-label="Saldo 0,00" disabled>
+                <input class="inputSaldo" type="text" id="saldo"
+                placeholder="100,00" aria-label="Saldo" disabled>
             </div>
         </div>
 
@@ -448,6 +448,46 @@
                     } else {
                         const errorText = await resAddNewEvent.text();
                         console.error("Erro ao adicionar evento:", errorText);
+                    }
+                } catch (error) {
+                    console.log("Erro na requisição:", error);
+                }
+            }
+
+            async function getSaldo() {
+                //var pIdUsr = parseInt(document.getElementById("token").value);
+                //console.log("Token do usuário: ", pIdUsr);
+                var pIdUsr = 1;
+
+                if (pIdUsr){
+                    await requestGetSaldo(pIdUsr);
+                } else {
+                    alert('Token ou Id do usuário não encontrado');
+                }
+            }
+
+            async function requestGetSaldo(idUsr) {
+                try {
+                    const h = new Headers();
+                    h.append("Content-Type", "application/json");
+
+                    h.append("id_usr", idUsr);
+
+                    const resGetSaldo = await fetch("http://127.0.0.1:3000/getSaldo", {
+                        method: "GET",
+                        headers: h,
+                    })
+
+                    if(resGetSaldo.ok){
+                        const saldoData = await resGetSaldo.json();
+                        const saldo = saldoData.saldo;
+                        console.log("Saldo disponibilizado com sucesso.");
+
+                        const saldoField = document.getElementById("saldo");
+                        saldoField.value = parseFloat(saldo).toFixed(2).replace('.', ',');
+                    } else {
+                        const errorText = await resGetSaldo.text();
+                        console.error("Erro ao disponibilizar saldo:", errorText);
                     }
                 } catch (error) {
                     console.log("Erro na requisição:", error);
