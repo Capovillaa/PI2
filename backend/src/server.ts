@@ -21,6 +21,7 @@ routes.put('/signUp', AccountsManager.signUpHandler);
 routes.put('/login', AccountsManager.loginAuthenticatorHandler);
 
 // Financial
+routes.get('/getSaldo', FinancialManager.getSaldoHandler);
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 
