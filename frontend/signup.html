@@ -13,10 +13,9 @@
                 <span class="puc">PUC</span><span class="bets">Bets</span>
             </button>
         </div>
-        
         <div class="rectangleForms">
             <div>
-                <form id="cadastroForm">
+                <form id="cadastroForm" style="border-radius: 15px;">
                     <h2>Cadastro</h2>
                     <label for="nameInput" class="form-label">Nome Completo</label>
                     <input type="text" class="campo-formulario" id="nameInput" aria-describedby="ajudaNome">
@@ -30,7 +29,10 @@
                         <input type="checkbox" class="form-check-input" id="exampleCheck1">
                         <label class="form-check-label" for="exampleCheck1">Aceito as políticas de privacidade</label>
                     </div>
-                    <button type="submit" id="submitButton" disabled onclick="signUp(event)">Criar conta</button>
+                    <div class="d-flex justify-content-center gap-5 mt-3">
+                        <button type="submit" id="submitButton" disabled onclick="signUp(event)">Criar conta</button>
+                        <button type="submit" id="botaoLogin"  onclick="Login(event)">Fazer Login</button>
+                    </div>
                 </form>
                 <div id="messagebox">
                     <p id="message"></p>
@@ -58,6 +60,11 @@
                 }
             });
             
+            function Login(event){
+                event.preventDefault();
+                window.location.href = "login.html";
+            }
+
             async function signUp(event){
                 event.preventDefault();
                 var pName = document.getElementById("nameInput").value;
