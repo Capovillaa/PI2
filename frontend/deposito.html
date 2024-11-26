@@ -87,7 +87,7 @@
             
            
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Confirmar Depósito</button>
+                <button type="submit" class="btn btn-primary" onclick="addFunds()">Confirmar Depósito</button>
             </div>
         </form>
        
@@ -128,27 +128,29 @@
 
         async function addFunds() {
             event.preventDefault();
+            const pToken = sessionStorage.getItem("authToken");
             var pValor = parseFloat(document.getElementById("valorDeposito").value);
             var pCartao = parseInt(document.getElementById("numeroCartao").value);
             var pCvv = parseInt(document.getElementById("cvv").value);
             var pDataValidade = document.getElementById("validade").value;
+            console.log(pToken);
             console.log(pValor);
             console.log(pCartao);
             console.log(pCvv);
             console.log(pDataValidade);
-            if(pValor && pCartao && pCvv && pDataValidade){
-                await requestAddFunds(pValor,pCartao,pCvv,pDataValidade);
+            if(pToken && pValor && pCartao && pCvv && pDataValidade){
+                await requestAddFunds(pToken, pValor,pCartao,pCvv,pDataValidade);
             }else{
                 alert('Preencha todos os campos corretamente.');
             }
         }
 
-        async function requestAddFunds(valor, cartao, cvv, dataValidade) {
+        async function requestAddFunds(token, valor, cartao, cvv, dataValidade) {
             try {
                 const h = new Headers();
                 h.append("Content-Type", "application/json");
 
-                h.append("email", "eduardo.fg1@puccampinas.edu.br");
+                h.append("Authorization", token);
                 h.append("valor", valor);
                 h.append("numero-cartao", cartao);
                 h.append("cvv", cvv);

@@ -45,11 +45,12 @@
                 <div class="col-md-auto">
                     <div class="input-group">
                         <input class="inputPesquisa" type="text" 
-                         placeholder="Buscar evento...">
-                        <button type="button" class="buttonPlus">
-                          <i class="fas fa-search"></i></button>
+                            placeholder="Buscar evento..." id="inputPesquisa">
+                        <button type="button" class="buttonPlus" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
-                </div>
+                </div>                
                 <div class="col col-lg-1">
                     <button type="button" class="buttonPlusEvent"
                      style="float:right;" data-bs-toggle="modal"
@@ -265,10 +266,11 @@
                     });
 
                     if(resEvents.ok){
-                        refreshPaginator();
                         const eventsData = await resEvents.json();
                         console.log(eventsData);
+                        allEvents = eventsData;
                         fillTableWithEvents(eventsData);
+                        refreshPaginator();
                     } else {
                         alert('Ocorreu um erro ao encontrar os eventos aprovados ou a quantidade de páginas.')
                     }
@@ -343,7 +345,44 @@
                 modal.hide();
             }
 
+            document.getElementById("searchButton").addEventListener("click", searchEvents);
+            document.getElementById("inputPesquisa").addEventListener("input", searchEvents);
+
+            let allEvents = [];
+
+            function searchEvents() {
+                const searchTerm = document.getElementById("inputPesquisa").value.toLowerCase();
+                
+                if (searchTerm === "") {
+                    fillTableWithEvents(allEvents);
+                    return;
+                }
+
+                const filteredEvents = allEvents.filter(event => {
+                    return event.TITULO.toLowerCase().includes(searchTerm) ||
+                        event.DESCRICAO.toLowerCase().includes(searchTerm) ||
+                        event.CATEGORIA.toLowerCase().includes(searchTerm);
+                });
+
+                fillTableWithEvents(filteredEvents);
+                adjustPaginator(filteredEvents);
+            }
+
+            function adjustPaginator(filteredEvents) {
+                const pageNumberWithMatch = Math.ceil(filteredEvents.length / pageSize);
+                if (filteredEvents.length > 0) {
+                    // Atualiza a página automaticamente
+                    const index = allEvents.findIndex(event => filteredEvents.includes(event));
+                    const pageWithMatch = Math.floor(index / pageSize) + 1;
+                    if (pageWithMatch !== currentPage) {
+                        currentPage = pageWithMatch;
+                        requestEvents(currentPage);
+                    }
+                }
+            }
+
             async function saveNewEvent() {
+                const pToken = sessionStorage.getItem("authToken");
                 var pTitle = document.getElementById("eventTitle").value;
                 var pDescription = document.getElementById("eventDescription").value;
                 var pDate = document.getElementById("eventDate").value;
@@ -355,8 +394,8 @@
                 console.log(pPrice);
                 console.log(pCategoria);
 
-                if (pTitle && pDescription && pDate && !isNaN(pPrice) && pCategoria !== "Selecione sua categoria") {
-                    await requestAddNewEvent(pTitle, pDescription, pDate, pPrice, pCategoria);
+                if (pToken && pTitle && pDescription && pDate && !isNaN(pPrice) && pCategoria !== "Selecione sua categoria") {
+                    await requestAddNewEvent(pToken, pTitle, pDescription, pDate, pPrice, pCategoria);
                 } else {
                     alert('Preencha todos os campos corretamente.');
                 }
@@ -376,14 +415,14 @@
                 return dayBeforeEventFormatted;
             }
 
-            async function requestAddNewEvent(title, description, date, price, categoria) {
+            async function requestAddNewEvent(token, title, description, date, price, categoria) {
                 currentDate = findCurrentDate();
                 dayBeforeEvent = findDayBeforeEvent(date);
                 try{
                     const h = new Headers();
                     h.append("Content-Type", "application/json");
 
-                    h.append("email", "eduardo.fg1@puccampinas.edu.br");
+                    h.append("Authorization", token);
                     h.append("titulo", title);
                     h.append("descricao", description);
                     h.append("categoria", categoria);
@@ -411,6 +450,7 @@
             }
 
             async function betOnEvent() {
+                const pToken = sessionStorage.getItem("authToken");
                 var pIdEvento = parseInt(document.getElementById("modalEventId").value);
                 var pQtdCotas = parseInt(document.getElementById("betQtty").value);
                 var pEscolha = document.getElementById("betChoice").value;
@@ -418,19 +458,19 @@
                 console.log("Quantidade de Cotas:", pQtdCotas);
                 console.log("Escolha:", pEscolha);
 
-                if (pIdEvento && pQtdCotas && pEscolha && pEscolha !== "Selecione sua escolha") {
-                    await requestBetOnEvent(pIdEvento, pQtdCotas, pEscolha);
+                if (pToken && pIdEvento && pQtdCotas && pEscolha && pEscolha !== "Selecione sua escolha") {
+                    await requestBetOnEvent(pToken, pIdEvento, pQtdCotas, pEscolha);
                 } else {
                     alert('Preencha todos os campos corretamente.');
                 }
             }
 
-            async function requestBetOnEvent(idEvento, qtdCotas, escolha) {
+            async function requestBetOnEvent(token, idEvento, qtdCotas, escolha) {
                 try {
                     const h = new Headers();
                     h.append("Content-Type", "application/json");
 
-                    h.append("email", "eduardo.fg1@puccampinas.edu.br");
+                    h.append("Authorization", token);
                     h.append("id_evento", idEvento);
                     h.append("qtd_cotas", qtdCotas);
                     h.append("escolha", escolha);
@@ -443,6 +483,7 @@
                     if(resBetOnEvent.ok){
                         console.log("Aposta realizada com sucesso!");
                         closeModalBetOnEvent();
+                        getSaldo();
                     } else {
                         const errorText = await resAddNewEvent.text();
                         console.error("Erro ao adicionar evento:", errorText);
@@ -453,23 +494,20 @@
             }
 
             async function getSaldo() {
-                //var pIdUsr = parseInt(document.getElementById("token").value);
-                //console.log("Token do usuário: ", pIdUsr);
-                var pIdUsr = 1;
+                const pToken = sessionStorage.getItem("authToken");
 
-                if (pIdUsr){
-                    await requestGetSaldo(pIdUsr);
+                if (pToken){
+                    await requestGetSaldo(pToken);
                 } else {
                     alert('Token ou Id do usuário não encontrado');
                 }
             }
 
-            async function requestGetSaldo(idUsr) {
+            async function requestGetSaldo(token) {
                 try {
                     const h = new Headers();
                     h.append("Content-Type", "application/json");
-
-                    h.append("id_usr", idUsr);
+                    h.append("Authorization", token);
 
                     const resGetSaldo = await fetch("http://127.0.0.1:3000/getSaldo", {
                         method: "GET",
@@ -498,14 +536,12 @@
                     requestEvents(page);
                 }
             });
-            /* PArte da Session que obriga a fazer login antes de entrar
-            window.onload = function() {
-                const userLoggedIn = sessionStorage.getItem("userLoggedIn");
-                if (userLoggedIn !== "true") {
-                    window.location.href = "login.html";
-                }
-            };
-            */
+            
+            function logout() {
+                sessionStorage.removeItem("authToken");
+                window.location.href = "login.html";
+            }
+
         </script>
     </body>
 </html>

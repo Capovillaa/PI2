@@ -18,7 +18,7 @@ routes.get('/', (req: Request, res: Response) => {
 
 // Accounts
 routes.put('/signUp', AccountsManager.signUpHandler);
-routes.put('/login', AccountsManager.loginAuthenticatorHandler);
+routes.post('/login', AccountsManager.loginAuthenticatorHandler);
 
 // Financial
 routes.get('/getSaldo', FinancialManager.getSaldoHandler);
@@ -29,7 +29,7 @@ routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
 routes.put('/addNewEvent', EventsManager.addNewEventHandler);
 routes.post('/evaluateNewEvent', EventsManager.evaluateNewEventHandler);
 routes.get('/getEvents', EventsManager.getEventsHandler);
-routes.get('/searchEvents', EventsManager.searchEventsHandler);
+routes.post('/searchEventsByPage', EventsManager.getEventsByPageHandler);
 routes.get('/getEventsQtty', EventsManager.getEventsQttyHandler);
 routes.post('/getEventsByPage', EventsManager.getEventsByPageHandler);
 routes.post('/deleteEvent', EventsManager.deleteEventsHandler);

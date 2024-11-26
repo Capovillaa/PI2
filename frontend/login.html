@@ -68,13 +68,16 @@
           h.append("senha", password);
 
           const resLogin = await fetch ("http://127.0.0.1:3000/login", {
-            method: "PUT",
+            method: "POST",
             headers: h,
           });
+
           if (resLogin.ok){
-            console.log("Login permitido.");
+            const data = await resLogin.json();
+            const token = data.token;
+            console.log("Token recebido: ", token);
+            sessionStorage.setItem("authToken", token);
             showSuccessMessage("Login realizado com sucesso!");
-            sessionStorage.setItem("userLoggedIn", "true");
             window.location.href = "events.html";
           }
           else {
@@ -86,6 +89,7 @@
           console.log("Erro na requisição: ", error);
         }
       }
+
       const mb = document.getElementById("messagebox");
       document.getElementById("loginForm").addEventListener("submit", signIn);
 

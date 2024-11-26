@@ -8,11 +8,6 @@ dotenv.config();
 
 export namespace FinancialManager{
 
-    function validateEmail(email: string) :boolean{
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
     function validateCardNumber(cardNumber:number,cvv:number,expirationDate:string) :boolean{
         const expirationDateRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;     
         if(cardNumber > 9999999999999 && cardNumber < 10000000000000000 && cvv > 99 && cvv < 1000 && expirationDateRegex.test(expirationDate)){
@@ -21,7 +16,7 @@ export namespace FinancialManager{
         return false;
     }
 
-    async function getSaldo(idUsr:number){
+    async function getSaldo(token:string){
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
         try {
@@ -34,8 +29,8 @@ export namespace FinancialManager{
             let resultUser = await connection.execute<UserAccount>(
                 `SELECT *
                  FROM ACCOUNTS
-                 WHERE ID_USR = :idUsr`,
-                {idUsr}
+                 WHERE TOKEN = :token`,
+                {token}
             );
 
             let User = resultUser.rows && resultUser.rows[0] ? resultUser.rows[0] : null;
@@ -68,7 +63,7 @@ export namespace FinancialManager{
         }
     }
 
-    async function addCreditCard(email:string,cardNumber:number,cvv:number,expirationDate:string){
+    async function addCreditCard(token:string,cardNumber:number,cvv:number,expirationDate:string){
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -86,8 +81,8 @@ export namespace FinancialManager{
             let result = await connection.execute<AccountResult>(
                 `SELECT FK_ID_CRT
                  FROM ACCOUNTS
-                 WHERE EMAIL = :email`,
-                {email}
+                 WHERE TOKEN = :token`,
+                {token}
             );
             
             let idCrt = result.rows?.[0]?.FK_ID_CRT;
@@ -98,8 +93,8 @@ export namespace FinancialManager{
             let cardExists = await connection.execute(
                 `SELECT NUM_CARD
                  FROM CREDIT_CARD
-                 WHERE FK_ID_CRT = :idCrt`,
-                {idCrt}
+                 WHERE NUM_CARD = :cardNumber`,
+                {cardNumber}
             );
             
             if (cardExists && cardExists.rows && cardExists.rows.length === 0) {
@@ -128,7 +123,7 @@ export namespace FinancialManager{
         }
     }
 
-    async function addFunds(email: string, valor: number){
+    async function addFunds(token: string, valor: number){
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -139,40 +134,29 @@ export namespace FinancialManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            interface idResult {
-                FK_ID_CRT: number;
-            }
-
-            interface balanceResult {
-                SALDO: number;
-            }
-
-            let resultId = await connection.execute<idResult>(
-                `SELECT FK_ID_CRT
+            let result = await connection.execute<UserAccount>(
+                `SELECT *
                  FROM ACCOUNTS
-                 WHERE EMAIL = :email`,
-                {email}
+                 WHERE TOKEN = :token`,
+                {token}
             );
 
-            let idCrt = resultId.rows?.[0]?.FK_ID_CRT;
-            if (!idCrt) {
-                throw new Error("Não existe nenhum usuário com este email.");
-            };
+            let User = result.rows && result.rows[0] ? result.rows[0] : null;
 
-            let resultBalance = await connection.execute<balanceResult>(
-                `SELECT SALDO
+            let idCrt = User?.FK_ID_CRT;
+
+            let resultWallet = await connection.execute<Wallet>(
+                `SELECT *
                  FROM WALLETS
                  WHERE ID_CRT = :idCrt`,
                 {idCrt}
             );
 
-            let balance = resultBalance.rows?.[0]?.SALDO;
-            if (balance === undefined || balance === null) {
-                throw new Error("Carteira do usuário não foi encontrada.");
-            }
+            let Wallet = resultWallet.rows && resultWallet.rows[0] ? resultWallet.rows[0] : null;
 
+            let balance = Wallet?.SALDO ?? 0;
             balance += valor;
-            
+
             let update = await connection.execute(
                 `UPDATE WALLETS
                  SET SALDO = :balance
@@ -180,12 +164,11 @@ export namespace FinancialManager{
                 {balance, idCrt},
                 {autoCommit: false}
             );
-
             await connection.commit();
+
             console.log("Resultados da atualização: ", update);
         }catch (err) {
-            console.error("Erro do banco de dados: ", err);
-            throw new Error("Erro ao tentar adicionar fundos à carteira.");
+            console.error("Erro ao tentar adicionar fundos à carteira: ", err);
         }finally {
             if (connection){
                 try{
@@ -296,10 +279,10 @@ export namespace FinancialManager{
     }
 
     export const getSaldoHandler:RequestHandler = async (req:Request, res:Response) => {
-        const pIdUsr = Number(req.get("id_usr"));
-        if (!isNaN(pIdUsr)){
+        const pToken = req.get("Authorization");
+        if (pToken){
             try {
-                let saldo = await getSaldo(pIdUsr);
+                let saldo = await getSaldo(pToken);
                 res.status(200).json({saldo});
             } catch (error) {
                 res.statusCode = 500;
@@ -312,16 +295,16 @@ export namespace FinancialManager{
     }
 
     export const addFundsHandler:RequestHandler = async (req:Request, res:Response) => {
-        const pEmail = req.get('email');
+        const pToken = req.get('Authorization');
         const pValor = Number(req.get('valor'));
         const pCardNumber = Number(req.get('numero-cartao'));
         const pCvv = Number(req.get('cvv'));
         const pExpirationDate = req.get('validade');
-        if (pEmail && !isNaN(pValor) && !isNaN(pCardNumber) && !isNaN(pCvv) && pExpirationDate){
-            if(validateEmail(pEmail) && pValor > 0 && validateCardNumber(pCardNumber,pCvv,pExpirationDate)){ 
+        if (pToken && !isNaN(pValor) && !isNaN(pCardNumber) && !isNaN(pCvv) && pExpirationDate){
+            if(pValor > 0 && validateCardNumber(pCardNumber,pCvv,pExpirationDate)){ 
                 try {
-                    await addCreditCard(pEmail,pCardNumber,pCvv,pExpirationDate);
-                    await addFunds(pEmail,pValor);
+                    await addCreditCard(pToken,pCardNumber,pCvv,pExpirationDate);
+                    await addFunds(pToken,pValor);
                     res.statusCode = 200;
                     res.send('Créditos adicionados com sucesso.');
                 } catch (error) {
@@ -345,7 +328,7 @@ export namespace FinancialManager{
         const pContaBancaria = Number(req.get('contaBancaria'));
         const pValor = Number(req.get('valor'));
         if (pEmail && pSenha && !isNaN(pContaBancaria) && !isNaN(pValor)){
-            if (validateEmail(pEmail) && pValor > 0){
+            if (pValor > 0){
                 try {
                     const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
                     res.statusCode = 200;

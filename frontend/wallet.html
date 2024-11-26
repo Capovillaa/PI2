@@ -23,6 +23,7 @@
             <button type="button" class="btn btn-primary" id="PUCBetsButton">
                 <span class="puc">PUC</span><span class="bets">Bets</span>
             </button>
+            <button class="btn btn-secondary" id="logoutButton" onclick="logout()">Logout</button>
         </div>
     </nav>
 
@@ -56,24 +57,25 @@
 
     <script>
         async function getSaldo() {
-            const pIdUsr = 1; // ID de exemplo
+            const token = sessionStorage.getItem("authToken");
 
-            if (pIdUsr) {
-                await requestGetSaldo(pIdUsr);
+            if (token) {
+                await requestGetSaldo(token);
             } else {
                 alert('Token ou Id do usuário não encontrado');
+                window.location.href = "login.html";
             }
         }
 
-        async function requestGetSaldo(idUsr) {
+        async function requestGetSaldo(token) {
             try {
-                const headers = new Headers();
-                headers.append("Content-Type", "application/json");
-                headers.append("id_usr", idUsr);
+                const h = new Headers();
+                h.append("Content-Type", "application/json");
+                h.append("Authorization", token);
 
                 const resGetSaldo = await fetch("http://127.0.0.1:3000/getSaldo", {
                     method: "GET",
-                    headers: headers,
+                    headers: h,
                 });
 
                 if (resGetSaldo.ok) {
@@ -90,6 +92,11 @@
             } catch (error) {
                 console.log("Erro na requisição:", error);
             }
+        }
+
+        function logout() {
+            sessionStorage.removeItem("authToken");
+            window.location.href = "login.html";
         }
 
         // Executa ao carregar a página

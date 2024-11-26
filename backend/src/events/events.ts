@@ -7,19 +7,13 @@ import { Events } from "../Interfaces/interface";
 import { Bet } from "../Interfaces/interface";
 dotenv.config();
 
-
-function validateEmail(email: string) :boolean{
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-async function getUser(email: string,connection: OracleDB.Connection){
+async function getUser(token: string,connection: OracleDB.Connection){
 
     let result = await connection.execute<UserAccount>(
         `SELECT *
          FROM ACCOUNTS
-         WHERE EMAIL = :email`,
-        {email}
+         WHERE TOKEN = :token`,
+        {token}
     );
 
     let User = result.rows && result.rows[0] ? result.rows[0] : null;
@@ -106,7 +100,7 @@ function getWinnersPool(allWinnersBets: Bet[],Event: Events){
 }
 export namespace EventsManager{
 
-    async function addNewEvent(email: string, titulo: string, descricao: string, categoria: string, 
+    async function addNewEvent(token: string, titulo: string, descricao: string, categoria: string, 
         valorCota: number, dataHoraInicio: string, dataHoraFim: string, dataEvento: string) : Promise<OracleDB.Result<unknown>> {
         
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
@@ -117,7 +111,7 @@ export namespace EventsManager{
                 connectionString: process.env.ORACLE_CONN_STR
             });
 
-            let User = await getUser(email,connection);
+            let User = await getUser(token,connection);
             
             let idUsr = User?.ID_USR;
 
@@ -242,19 +236,7 @@ export namespace EventsManager{
         }
     }
 
-    interface GetEvent {
-        ID_EVENTO: number;
-        FK_ID_USR: number;
-        TITULO: string;
-        DESCRICAO: string;
-        CATEGORIA: string;
-        DATA_INICIO: Date;
-        DATA_FIM: Date;
-        DATA_EVENTO: Date;
-        STATUS: string;
-    }
-
-    async function getEvents(status: string): Promise<GetEvent[]> {
+    async function getEvents(status: string): Promise<Events[]> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
         try {
@@ -263,7 +245,9 @@ export namespace EventsManager{
                 password: process.env.ORACLE_PASSWORD,
                 connectString: process.env.ORACLE_CONN_STR
             });
-            let sqlgetEvents = `SELECT ID_EVT, FK_ID_USR, TITULO, DESCRICAO, CATEGORIA, DATA_INICIO, DATA_FIM, DATA_EVT, STATUS, VALOR_COTA FROM EVENTS`;
+            let sqlgetEvents = 
+                `SELECT * 
+                 FROM EVENTS`;
             let paramsgetEvents: any = {};
             let conditionsgetEvents: string[] = [];
             if (status) {
@@ -278,7 +262,7 @@ export namespace EventsManager{
             const resultGetEvents = await connection.execute(sqlgetEvents, paramsgetEvents);
             await connection.close();
             if (resultGetEvents.rows && resultGetEvents.rows.length > 0) {
-                return resultGetEvents.rows as GetEvent[];
+                return resultGetEvents.rows as Events[];
             } else {
                 console.log ('Nenhum evento encontrado com esse status.');
                 return [];
@@ -297,7 +281,7 @@ export namespace EventsManager{
         }
     }
 
-    async function searchEvents(searchTerm: string | undefined): Promise<GetEvent[]> {
+    async function searchEvents(searchTerm: string | undefined): Promise<Events[]> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -325,7 +309,7 @@ export namespace EventsManager{
             await connection.close();
 
             if (resultGetEvents.rows && resultGetEvents.rows.length > 0) {
-                return resultGetEvents.rows as GetEvent[];
+                return resultGetEvents.rows as Events[];
             } else {
                 console.log ('Nenhum evento encontrado com essa palavra.');
                 return [];
@@ -372,7 +356,12 @@ export namespace EventsManager{
         });
 
         let eventsQtty = await connection.execute(
-            `SELECT * FROM EVENTS WHERE STATUS = 'aprovado' ORDER BY ID_EVT OFFSET :startRecord ROWS FETCH NEXT :pageSize ROWS ONLY`,
+            `SELECT * FROM EVENTS 
+             WHERE STATUS = 'aprovado' 
+             ORDER BY ID_EVT 
+             OFFSET :startRecord ROWS 
+             FETCH NEXT :pageSize 
+             ROWS ONLY`,
             [startRecord, pageSize]
         );
 
@@ -380,7 +369,7 @@ export namespace EventsManager{
         return eventsQtty;
     }
     
-    async function betOnEvent(email:string,idEvento:number,qtdCotas:number,escolha:string) {
+    async function betOnEvent(token:string,idEvento:number,qtdCotas:number,escolha:string) {
 
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
@@ -393,7 +382,7 @@ export namespace EventsManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            let User = await getUser(email,connection);
+            let User = await getUser(token,connection);
             let Event = await getEvent(idEvento,connection);
             
             if(User?.FK_ID_CRT){
@@ -557,16 +546,15 @@ export namespace EventsManager{
                         {autoCommit: false}
                     );
                     await connection.commit();
-                    
-                    let updateStatus = await connection.execute(
-                        `UPDATE EVENTS
-                            SET STATUS = 'finalizado'
-                            WHERE ID_EVT = :idEvt`,
-                        {IdEvt},
-                        {autoCommit: false}
-                    );
-                    await connection.commit();
                 }
+                let updateStatus = await connection.execute(
+                    `UPDATE EVENTS
+                        SET STATUS = 'finalizado'
+                        WHERE ID_EVT = :idEvt`,
+                    {IdEvt},
+                    {autoCommit: false}
+                );
+                await connection.commit();
 
             }else{
                 throw new Error("Evento não Existe.");
@@ -586,7 +574,7 @@ export namespace EventsManager{
     }
 
     export const addNewEventHandler:RequestHandler = async (req: Request, res:Response) => {
-        const pEmail = req.get('email');
+        const pToken = req.get('Authorization');
         const pTitulo = req.get('titulo');
         const pDescricao = req.get('descricao');
         const pCategoria = req.get('categoria');
@@ -595,10 +583,10 @@ export namespace EventsManager{
         const pDataHoraFim = req.get('data-hora-fim');
         const pDataEvento = req.get('data-evento');
 
-        if (pEmail && pTitulo && pDescricao && pCategoria && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
+        if (pToken && pTitulo && pDescricao && pCategoria && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
             if (pValorCota >= 1){
                 try {
-                    await addNewEvent(pEmail, pTitulo, pDescricao, pCategoria, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
+                    await addNewEvent(pToken, pTitulo, pDescricao, pCategoria, pValorCota, pDataHoraInicio, pDataHoraFim, pDataEvento);
                     res.statusCode = 200;
                     res.send('Evento criado com sucesso.');
                 } catch (error) {
@@ -698,15 +686,15 @@ export namespace EventsManager{
 };
 
     export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
-        const pEmail = req.get('email');
+        const pToken = req.get('Authorization');
         const pidEvento = parseInt(req.get('id_evento') || '0');
         const pQtdCotas = parseInt(req.get('qtd_cotas') || '0');
         const pEscolha = req.get('escolha');
 
-        if(pEmail && pidEvento && !isNaN(pQtdCotas) && pEscolha){
-            if(validateEmail(pEmail) && pQtdCotas > 0){
+        if(pToken && pidEvento && !isNaN(pQtdCotas) && pEscolha){
+            if(pQtdCotas > 0){
                 try{
-                    await betOnEvent(pEmail,pidEvento,pQtdCotas,pEscolha);
+                    await betOnEvent(pToken,pidEvento,pQtdCotas,pEscolha);
                     res.statusCode = 200;
                     res.send('Aposta realizada com sucesso.');
                 }catch(err){

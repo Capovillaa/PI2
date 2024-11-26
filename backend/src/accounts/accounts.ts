@@ -1,4 +1,5 @@
 import {Request, RequestHandler, Response} from "express";
+import { UserAccount } from "../Interfaces/interface";
 import OracleDB from "oracledb";
 import dotenv from "dotenv";
 import bcrypt from 'bcryptjs';
@@ -81,81 +82,55 @@ export namespace AccountsManager {
 
     }
 
-    async function loginAuthenticator(email:string, senha:string): Promise<boolean> {
+    interface LoginResult {
+        token?: string;
+        error?: string;
+    }
+
+    async function loginAuthenticator(email: string, senha: string): Promise<LoginResult> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
-
+    
         try {
             connection = await OracleDB.getConnection({
                 user: process.env.ORACLE_USER,
                 password: process.env.ORACLE_PASSWORD,
-                connectString: process.env.ORACLE_CONN_STR
+                connectString: process.env.ORACLE_CONN_STR,
             });
-
-            interface AdminAccount {
-                EMAIL: string;
-                SENHA: string;
-            }
-
-            interface Account {
-                NOME: string;
-                EMAIL: string;
-                SENHA: string;
-            }
-
-            let adminLogin = await connection.execute(
-                `SELECT EMAIL, SENHA
-                 FROM ADMIN_ACCOUNTS
-                 WHERE EMAIL = :email`,
-                 {email}
-            )
-
-            let verificacaoLogin:boolean = false;
-
-            if (adminLogin.rows && adminLogin.rows.length > 0){
-                const adminAccount = adminLogin.rows[0] as unknown as AdminAccount
-                const senhaBanco = adminAccount.SENHA;
-
-                if (senha === senhaBanco){
-                    verificacaoLogin = true;
-                    console.log('Login bem sucedido. Bem-vindo(a) ADMIN');
-                }
-            }
-
-            let userLogin = await connection.execute(
-                `SELECT NOME, EMAIL, SENHA
+    
+            let resultUser = await connection.execute<UserAccount>(
+                `SELECT *
                  FROM ACCOUNTS
                  WHERE EMAIL = :email`,
-                 {email}
-            )
-
-            if (userLogin.rows && userLogin.rows.length > 0){
-                const account = userLogin.rows[0] as unknown as Account
-                const senhaCriptografada = account.SENHA;
-                const isPasswordValid = await bcrypt.compare(senha, senhaCriptografada); 
-
-                if (isPasswordValid){
-                    verificacaoLogin = true;
-                    console.log(`Login bem sucedido. Bem-vindo(a), ${account.NOME}!`);
+                { email }
+            );
+    
+            let User = resultUser.rows && resultUser.rows[0] ? resultUser.rows[0] : null;
+    
+            if (User) {
+                const isPasswordValid = await bcrypt.compare(senha, User.SENHA);
+    
+                if (isPasswordValid) {
+                    console.log(`Login bem sucedido. Bem-vindo(a), ${User.NOME}!`);
+                    return { token: User.TOKEN };
+                } else {
+                    return { error: "Senha inválida!" };
                 }
             }
-            
-            return verificacaoLogin;
-
+            return { error: "Conta não encontrada!" };
         } catch (err) {
             console.error("Erro do banco de dados: ", err);
             throw new Error("Erro ao tentar realizar o login.");
-
         } finally {
-            if (connection){
-                try{
+            if (connection) {
+                try {
                     await connection.close();
                 } catch (err) {
                     console.error("Erro ao tentar fechar a conexão: ", err);
                 }
             }
         }
-    }
+    }    
 
     export const signUpHandler: RequestHandler = async (req: Request, res: Response) => {
         const pNome = req.get('nome');
@@ -184,27 +159,24 @@ export namespace AccountsManager {
     }
 
     export const loginAuthenticatorHandler: RequestHandler = async (req: Request, res: Response) => {
-        const pEmail = req.get('email');
-        const pSenha = req.get('senha');
-
-        if (pEmail && pSenha){
+        const pEmail = req.get("email");
+        const pSenha = req.get("senha");
+    
+        if (pEmail && pSenha) {
             try {
                 const resultLogin = await loginAuthenticator(pEmail, pSenha);
-                
-                if (resultLogin){
-                    res.statusCode = 200;
-                    res.send('Login realizado com sucesso.')
-                } else {
-                    res.statusCode = 401;
-                    res.send('Senha incorreta ou usuário não encontrado.')
+    
+                if (resultLogin.error) {
+                    res.status(401).send(resultLogin.error);
+                } else if (resultLogin.token) {
+                    res.status(200).json({ token: resultLogin.token });
                 }
             } catch (error) {
-                res.statusCode = 500;
-                res.send('Erro ao tentar localizar sua conta. Tente novamente.')
+                console.error("Erro durante o login:", error);
+                res.status(500).send("Erro ao tentar localizar sua conta. Tente novamente.");
             }
         } else {
-            res.statusCode = 400;
-            res.send('Parâmetros inválidos ou faltantes.')
+            res.status(400).send("Parâmetros inválidos ou faltantes.");
         }
-    } 
+    };    
 }
