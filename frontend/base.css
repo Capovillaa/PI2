@@ -27,6 +27,14 @@ body {
 }
 
 /*tabela de saldo no topo da tela*/
+.buttonWallet {
+    background-color: #ff7d00;
+    border-radius: 10px;
+    width: 100px;
+    height: 50px;
+    text-align: center;
+}
+
 .right-controls {
     display: flex;
     align-items: center;
