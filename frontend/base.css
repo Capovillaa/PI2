@@ -19,6 +19,13 @@ body {
     margin: 0;
 
 }
+
+.bodyOpaco {
+    background-image: url("../imagens/moedas50.png");
+    background-size:auto;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 .bodyPagina1 {
     background-image: url("../imagens/GvEDnG0.png");
     background-size: 2000px 1000px;
@@ -64,7 +71,6 @@ body {
     padding: 0 20px;      
 }
 
-
 .top-rectangle a {
     color: #fae5ca;   
     text-decoration: none;  
@@ -75,7 +81,6 @@ body {
     text-decoration: underline;  
 }
 
-
 .rectangleForms {
     background-color: #4D85D5;
     padding: 30px;
@@ -84,34 +89,96 @@ body {
     text-align: center;
     width: 60%;
     position: center;
+    
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center; 
+        gap: 10px; 
+    }
 
-  form {
+    .form-check-label {
+        flex: 1; 
+        text-align: left; 
+        font-size: 1em; 
+    }
+
+    label {
+        color:#fae5ca;
+    }
+    
+    input {
+        padding: 5px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 5px;
+    }
+    
+    button {
+        background-color:#88A8D6;
+        color:#fae5ca;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color:#6781a5; 
+        color: #fae5ca; 
+        }
+        
+    }
+
+.saldo-container {
     display: flex;
-    flex-direction: column;
-  }
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
 
-  label {
-    color:#fae5ca;
-  }
-  
-  input {
-    padding: 5px;
-    margin-bottom: 10px;
-    border: none;
-    border-radius: 5px;
-  }
-  
-  button {
-    background-color:#88A8D6;
-    color:#fae5ca;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color:#6781a5; 
-    color: #fae5ca; 
+.retanguloSaldo {
+    background-color: #88A8D6;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.rectangleFormsSaque {
+    background-color: #4D85D5;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+    width: 40%;
+    position: center;
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    button {
+        background-color:#88A8D6;
+        color:#fae5ca;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color:#6781a5; 
+        color: #fae5ca; 
     }
     
 }
@@ -222,6 +289,28 @@ h3 {
     width: 100%;
 }
 
+.inputFiltro {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    text-align: center;
+    background-color: #4D85D5;
+    color: #fae5ca;
+}
+
+.inputFiltro::placeholder {
+    color:#fae5ca;
+    opacity: 1;
+}
+
+.borda-texto {
+    border: 2px solid #88A8D6; 
+    background-color: #88A8D6;
+    padding: 2px 5px;          
+    border-radius: 5px;       
+}
+
 
 /*botoes*/
 .button {
@@ -307,6 +396,24 @@ h3 {
     background-color:#305fa0; 
     color: #fae5ca; 
 }
+
+.btn-success-orange {
+    background-color: #ff7d00;
+    color: #fae5ca;
+    border: 1px solid #ff7d00; 
+    padding: 1px 5px; 
+    border-radius: 5px;
+    font-size: 20px; 
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-success-orange:hover {
+    background-color: #e06a00; 
+    color: #fff; 
+}
+
+
 
 /*cores*/
 .orange {

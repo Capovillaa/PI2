@@ -13,28 +13,35 @@
         rel="stylesheet"
         href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" 
         crossorigin="anonymous">
-    <link href="base.css" rel="stylesheet" />
+    
 </head>
+<body>
+    
+    <nav class="navbar bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img
+                    src="https://www.puc-campinas.edu.br/wp-content/uploads/2019/05/symbol-logo-puc.png"
+                    alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+                PUC BETS
+            </a>
+        </div>
+    </nav>
 
-<body class="bodyForms">
-    <div class="top-rectangle">
-        <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
-    </div>
-
-    <div class="rectangleFormsSaque" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -42%);">
-        <h2 class="text-center">Saque</h2>
+    <div class="container" style="padding-top: 40px; max-width: 700px;">
+        <h1 class="text-center">Saque</h1>
         <hr>
 
         <!-- Seleção de método -->
-        <div>
-            <label class="form-label" style="font-size: 20px;">Escolha o método de saque:</label>
+        <div class="mb-4">
+            <label class="form-label">Escolha o método de saque:</label>
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="method" id="pixOption" onclick="toggleMethod('pix')" checked>
-                <label class="form-check-label" for="pixOption" style="font-size: 15px;">PIX</label>
+                <label class="form-check-label" for="pixOption">PIX</label>
             </div>
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="method" id="bankOption" onclick="toggleMethod('bank')">
-                <label class="form-check-label" for="bankOption" style="font-size: 15px;">Conta Bancária</label>
+                <label class="form-check-label" for="bankOption">Conta Bancária</label>
             </div>
         </div>
 
@@ -43,7 +50,7 @@
             <h4>PIX</h4>
             <form>
                 <div class="mb-3">
-                    <label for="chavePix" class="form-label" style="font-size: 15px;">Chave PIX:</label>
+                    <label for="chavePix" class="form-label">Chave PIX:</label>
                     <input 
                         type="text" 
                         id="chavePix" 
@@ -61,52 +68,48 @@
         <div id="bankFields" style="display: none;">
             <h4>Conta Bancária</h4>
             <form>
-                <div class="mb-3" style="margin-bottom: 5px;">
-                    <label for="agencia" class="form-label" style="font-size: 15px; margin: 0;">Agência:</label>
+                <div class="mb-3">
+                    <label for="agencia" class="form-label">Agência:</label>
                     <input 
                         type="text" 
                         id="agencia" 
                         class="form-control" 
-                        style="padding: 5px; font-size: 14px;" 
                         placeholder="Exemplo: 1234" 
                         maxlength="4" 
                         pattern="\d{4}" 
                         title="Insira exatamente 4 dígitos." 
                         required>
                 </div>
-                <div class="mb-3" style="margin-bottom: 5px;">
-                    <label for="conta" class="form-label" style="font-size: 15px; margin: 0;">Conta:</label>
+                <div class="mb-3">
+                    <label for="conta" class="form-label">Conta:</label>
                     <input 
                         type="text" 
                         id="conta" 
                         class="form-control" 
-                        style="padding: 5px; font-size: 14px;" 
                         placeholder="Exemplo: 56789-0" 
                         maxlength="8" 
                         pattern="\d{5}-\d" 
                         title="Insira no formato 56789-0." 
                         required>
                 </div>
-                <div class="mb-3" style="margin-bottom: 5px;">
-                    <label for="cpf" class="form-label" style="font-size: 15px; margin: 0;">CPF:</label>
+                <div class="mb-3">
+                    <label for="cpf" class="form-label">CPF:</label>
                     <input 
                         type="text" 
                         id="cpf" 
                         class="form-control" 
-                        style="padding: 5px; font-size: 14px;" 
                         placeholder="Exemplo: 123.456.789-00" 
                         maxlength="14" 
                         pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" 
                         title="Insira no formato 123.456.789-00." 
                         required>
                 </div>
-                
             </form>
         </div>
 
         <!-- Valor do Saque -->
-        <div>
-            <label for="valorSaque" class="form-label" style="font-size: 15px;">Informe o valor que deseja sacar:</label>
+        <div class="mt-4">
+            <label for="valorSaque" class="form-label">Informe o valor que deseja sacar:</label>
             <input 
                 type="number" 
                 id="valorSaque" 
@@ -122,7 +125,7 @@
             <button type="button" class="btn btn-primary" onclick="submitWithdraw()">Confirmar Saque</button>
         </div>
         <div class="d-flex justify-content-center mt-3">
-            <a href="wallet.html" class="btn btn-success-orange">Voltar</a>
+            <a href="wallet.html" class="btn btn-success">Voltar</a>
         </div>
     </div>
 
@@ -229,4 +232,3 @@
     </script>
 </body>
 </html>
-
