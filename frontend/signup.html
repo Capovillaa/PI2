@@ -40,10 +40,10 @@
         </div>
         <div class="modal fade" id="walletOrEventModal" tabindex="-1"
          aria-label="Modal de seleção de próximos passos" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-1" id="betModalLabel">Cadastro realizado com sucesso!</h1>
+                    <h1 class="modal-title fs-1" id="walletOrEventModalLabel">Cadastro realizado com sucesso!</h1>
                     <button type="button" class="btn-close"
                         data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
@@ -52,8 +52,8 @@
                         Comece adicionando dinheiro à sua carteira ou explore os diversos eventos já cadastrados no site.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="">Adicionar dinheiro mais tarde</button>
-                    <button type="button" class="btn btn-primary" onclick="">Adicionar dinheiro</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='events.html';">Ver os eventos</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='deposito.html';">Adicionar dinheiro</button>
                 </div>
             </div>
             </div>
@@ -78,6 +78,55 @@
                     submitButton.disabled = true;   
                 }
             });
+
+            function showModal(){
+                const modal = new bootstrap.Modal(document.getElementById('walletOrEventModal'), {
+                    keyboard: false
+                });
+
+                modal.show();
+            }
+
+            async function signIn() {
+                const pEmail = document.getElementById("emailInput").value;
+                const pPassword = document.getElementById("inputPassword").value;
+
+                if (pEmail && pPassword) {
+                    await requestLogin(pEmail, pPassword);
+                }else{
+                    document.getElementById("message").innerHTML = content;
+                    mb.className = "messagebox error";
+                    mb.style.display = "block";
+                }
+            }
+
+            async function requestLogin (email, password){
+                try{
+                    const h = new Headers();
+                    h.append ("Content-Type", "application/json");
+
+                    h.append("email", email);
+                    h.append("senha", password);
+
+                    const resLogin = await fetch ("http://127.0.0.1:3000/login", {
+                        method: "POST",
+                        headers: h,
+                    });
+
+                    if (resLogin.ok){
+                        const data = await resLogin.json();
+                        const token = data.token;
+                        console.log("Token recebido: ", token);
+                        sessionStorage.setItem("authToken", token);
+                    }
+                    else {
+                        const errorText = await resLogin.text();
+                        console.error ("Erro a acessar a conta: ", errorText);
+                    }
+                    }catch(error){
+                    console.log("Erro na requisição: ", error);
+                }
+            }
 
             async function signUp(event){
                 event.preventDefault();
@@ -112,8 +161,9 @@
                     });
 
                     if(resSignUp.ok){
+                        signIn()
                         console.log("Conta Criada com Sucesso.");
-                        window.location.href = "login.html";
+                        showModal();
                     }else{
                         const errorText = await resSignUp.text();
                         console.error("Erro ao criar Conta: ",errorText);
@@ -127,7 +177,7 @@
             const mb = document.getElementById("messagebox");
             document.getElementById('PUCBetsButton').addEventListener('click', function() {
               window.location.href = 'pagina1.html';
-          });
+              });
         </script>
     </body>
 </html>
