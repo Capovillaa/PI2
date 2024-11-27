@@ -19,7 +19,7 @@
             }
         </style>
     </head>
-    <body onload="getSaldo()">
+    <body class="bodyOpaco" onload="getSaldo()">
         <div class="top-rectangle">
             <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
             <div class="right-controls">
@@ -39,7 +39,7 @@
         <div id="mainContent" class="container-fluid" style="padding-top: 20px;">
             <div class="row">
                 <div class="col">
-                    <h2>Eventos</h2>
+                    <h2 class="darkblue" style="font-weight: bold">Eventos</h2>
                 </div>
                 <div class="col-md-auto">
                     <div class="input-group">
@@ -59,8 +59,8 @@
             </div>
             <div class="row mt-4">
                 <div class="col-md-4">
-                    <label for="filterCategory" class="form-label">Filtrar por Categoria:</label>
-                    <select class="form-select" id="filterCategory">
+                    <label for="filterCategory" class="form-label borda-texto" style="font-weight: bold">Filtrar por Categoria:</label>
+                    <select class="form-select inputFiltro" id="filterCategory">
                         <option value="">Todas</option>
                         <option value="Futebol">Futebol</option>
                         <option value="E-Sports">E-Sports</option>
@@ -69,8 +69,8 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label for="sortByDate" class="form-label">Ordenar por:</label>
-                    <select class="form-select" id="sortByDate">
+                    <label for="sortByDate" class="form-label borda-texto" style="font-weight: bold">Ordenar por:</label>
+                    <select class="form-select inputFiltro" id="sortByDate">
                         <option value="select" selected>Selecione</option>
                         <option value="date">Data mais próxima</option>
                         <option value="popularity">Mais apostados</option>
@@ -174,7 +174,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary"
                      data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="saveNewEvent();">Salvar</button>
+                    <button type="button" class="btn btn-success-orange" onclick="saveNewEvent();">Salvar</button>
                 </div>
             </div>
             </div>
