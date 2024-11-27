@@ -51,6 +51,7 @@
             <div class="col-md-4">
                 <label for="sortByDate" class="form-label">Ordenar por:</label>
                 <select class="form-select" id="sortByDate">
+                    <option value="select" selected>Selecione</option>
                     <option value="date">Data mais próxima</option>
                     <option value="popularity">Mais apostados</option>
                 </select>
@@ -141,11 +142,11 @@
                     <form>
                         <div class="mb-3">
                             <label for="eventTitle" class="form-label">Titulo</label>
-                            <input type="text" class="campo-formulario" id="eventTitle">
+                            <input type="text" maxlength="50" class="campo-formulario" id="eventTitle">
                         </div>
                         <div class="mb-3">
                             <label for="eventDescription" class="form-label">Descrição</label>
-                            <input type="text" class="campo-formulario" id="eventDescription">
+                            <input type="text" maxlength="150" class="campo-formulario" id="eventDescription">
                         </div>
                         <div class="mb-3">
                             <label for="eventDate" class="form-label">Data do evento</label>
@@ -270,8 +271,8 @@
                 }
             }
 
-            async function requestEvents(pageNumber){
-                try{
+            async function requestEvents(pageNumber) {
+                try {
                     document.getElementById("loadingSpinner").style.display = "block";
                     document.getElementById("mainContent").style.display = "none";
 
@@ -286,14 +287,13 @@
                         headers: reqHeaders
                     });
 
-                    if(resEvents.ok){
+                    if (resEvents.ok) {
                         const eventsData = await resEvents.json();
-                        console.log(eventsData);
-                        allEvents = eventsData;
+                        allEvents = eventsData; // Atualize a lista global de eventos
                         fillTableWithEvents(eventsData);
                         refreshPaginator();
                     } else {
-                        alert('Ocorreu um erro ao encontrar os eventos aprovados ou a quantidade de páginas.')
+                        alert('Ocorreu um erro ao encontrar os eventos aprovados ou a quantidade de páginas.');
                     }
                 } catch (error) {
                     console.error(error);
@@ -521,6 +521,7 @@
                     await requestGetSaldo(pToken);
                 } else {
                     alert('Token ou Id do usuário não encontrado');
+                    window.location.href = "login.html";
                 }
             }
 
@@ -563,83 +564,28 @@
                 window.location.href = "login.html";
             }
 
-             // Eventos de exemplo para simulação
-    let events = [
-        {
-            id: 1,
-            title: "Botafogo X Atlético Mineiro",
-            description: "Final da Libertadores",
-            date: "2024-11-30",
-            odds: 5.0,
-            category: "Futebol",
-            bets: 200
-        },
-        {
-            id: 2,
-            title: "Eleição Presidencial",
-            description: "Previsão do vencedor",
-            date: "2024-12-01",
-            odds: 1.8,
-            category: "Política",
-            bets: 500
-        },
-        {
-            id: 3,
-            title: "CS:GO Major",
-            description: "Vencedor do campeonato",
-            date: "2024-11-29",
-            odds: 3.2,
-            category: "E-Sports",
-            bets: 300
-        }
-    ];
-
-    // Função para renderizar eventos na tabela
-    function renderEvents(filteredEvents) {
-        const tbody = document.querySelector("#tableEvents tbody");
-        tbody.innerHTML = "";
-
-        filteredEvents.forEach(event => {
-            const row = `
-                <tr id="${event.id}">
-                    <td class="text-left">${event.title}</td>
-                    <td class="text-left">${event.description}</td>
-                    <td class="text-left">${event.date}</td>
-                    <td class="text-end">${event.odds.toFixed(2)}</td>
-                    <td class="text-left">${event.category}</td>
-                    <td>
-                        <button type="button" class="btn btn-outline-secondary" 
-                                data-bs-toggle="modal" data-bs-target="#betOnEventModal">
-                            Apostar
-                        </button>
-                    </td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        });
-    }
-
     // Função para aplicar filtros
     function applyFilters() {
-        const category = document.getElementById("filterCategory").value;
-        const sortBy = document.getElementById("sortByDate").value;
+    const category = document.getElementById("filterCategory").value;
+    const sortBy = document.getElementById("sortByDate").value;
 
-        // Filtrar por categoria
-        let filteredEvents = events;
-        if (category) {
-            filteredEvents = filteredEvents.filter(event => event.category === category);
-        }
-
-        // Ordenar por data ou mais apostados
-        if (sortBy === "date") {
-            filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-        } else if (sortBy === "popularity") {
-            filteredEvents.sort((a, b) => b.bets - a.bets);
-        }
-
-        // Renderizar os eventos filtrados
-        renderEvents(filteredEvents);
+    // Filtrar por categoria
+    let filteredEvents = allEvents; // Use a lista global de eventos
+    if (category && category !== "all") {
+        filteredEvents = filteredEvents.filter(event => event.CATEGORIA === category);
     }
+
+    // Ordenar por data ou popularidade
+    if (sortBy === "date") {
+        filteredEvents.sort((a, b) => new Date(a.DATA_EVT) - new Date(b.DATA_EVT));
+    } else if (sortBy === "popularity") {
+        filteredEvents.sort((a, b) => b.APOSTAS - a.APOSTAS); // Adapte se "APOSTAS" existir
+    }
+
+    // Renderizar os eventos filtrados
+    fillTableWithEvents(filteredEvents);
+}
+
 
     // Adicionar eventos de filtro e ordenação
     document.getElementById("filterCategory").addEventListener("change", applyFilters);
@@ -649,6 +595,20 @@
     document.addEventListener("DOMContentLoaded", () => {
         renderEvents(events);
     });
+    document.addEventListener('readystatechange', event => {
+    if(event.target.readyState === "complete") {
+        requestNumberOfEvents();
+        requestEvents(page).then(() => {
+            fillTableWithEvents(allEvents); // Exibe os eventos carregados
+        });
+    }
+});
+    function resetFilters() {
+        document.getElementById("filterCategory").value = "all";
+        document.getElementById("sortByDate").value = "";
+        fillTableWithEvents(allEvents); // Mostra todos os eventos
+    }
+
         </script>
     </body>
 </html>
