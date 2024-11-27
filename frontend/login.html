@@ -45,6 +45,7 @@
         const mb = document.getElementById("messagebox");
         mb.style.display = "none";
       }
+
       async function signIn(event) {
         event.preventDefault();
         const pEmail = document.getElementById("LoginEmail").value;
@@ -56,8 +57,6 @@
           showErrorMessage('Preencha todos os campos corretamente. ');
         }
       }
-
-
 
       async function requestLogin (email, password){
         try{

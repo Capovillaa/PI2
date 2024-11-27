@@ -345,29 +345,75 @@ export namespace EventsManager{
         return eventsQtty;
     }
 
-    async function getEventsByPage(page: number, pageSize: number): Promise<OracleDB.Result<unknown>> {
-        const startRecord = ((page - 1) * pageSize);
-
-        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
-        let connection = await OracleDB.getConnection({
-            user: process.env.ORACLE_USER,
-            password: process.env.ORACLE_PASSWORD,
-            connectString: process.env.ORACLE_CONN_STR
-        });
-
-        let eventsQtty = await connection.execute(
-            `SELECT * FROM EVENTS 
-             WHERE STATUS = 'aprovado' 
-             ORDER BY ID_EVT 
-             OFFSET :startRecord ROWS 
-             FETCH NEXT :pageSize 
-             ROWS ONLY`,
-            [startRecord, pageSize]
+    async function getBetsByEvent(eventsQtty: OracleDB.Result<any>, connection: OracleDB.Connection) {
+        interface BetCountResult {
+            BETSQTTY: number;
+        }
+        
+        const eventsWithBets = await Promise.all(
+            (eventsQtty?.rows ?? []).map(async (event: any) => {
+                const result = await connection.execute(
+                    `SELECT count(ID_APT) as betsQtty
+                     FROM BETS
+                     WHERE FK_ID_EVT = :id_evt`,
+                    { id_evt: event.ID_EVT }
+                );
+        
+                const betsQtty = (result.rows?.[0] as BetCountResult)?.BETSQTTY ?? 0;
+        
+                return {
+                    ...event,
+                    betsQtty,
+                };
+            })
         );
 
-        await connection.close();
-        return eventsQtty;
+        return eventsWithBets;
     }
+    
+    async function getEventsByPage(page: number, pageSize: number) {
+        const startRecord = (page - 1) * pageSize;
+    
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection: OracleDB.Connection | null = null;
+    
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR,
+            });
+    
+            // Busca eventos paginados
+            const eventsQtty = await connection.execute(
+                `SELECT * FROM EVENTS 
+                 WHERE STATUS = 'aprovado' 
+                 ORDER BY ID_EVT 
+                 OFFSET :startRecord ROWS 
+                 FETCH NEXT :pageSize ROWS ONLY`,
+                { startRecord, pageSize }
+            );
+    
+            if (!eventsQtty.rows || eventsQtty.rows.length === 0) {
+                console.log("Nenhum dado retornado ou estrutura inválida.");
+                return [];
+            }
+    
+            // Adiciona a quantidade de apostas a cada evento
+            const eventsWithBets = await getBetsByEvent(eventsQtty, connection);
+    
+            console.log(eventsWithBets); // Para verificar o resultado final
+            return eventsWithBets; // Retorna eventos com a quantidade de apostas
+        } catch (err) {
+            console.error("Erro ao buscar eventos:", err);
+            throw err;
+        } finally {
+            if (connection) {
+                await connection.close(); // Certifique-se de fechar a conexão
+            }
+        }
+    }
+    
     
     async function betOnEvent(token:string,idEvento:number,qtdCotas:number,escolha:string) {
 
@@ -668,22 +714,22 @@ export namespace EventsManager{
     }
 
     export const getEventsByPageHandler: RequestHandler = async (req: Request, res: Response) => {
-    try {
-        const pPage = parseInt(req.get('page') || '', 10);
-        const pPageSize = parseInt(req.get('pageSize') || '', 10);
+        try {
+            const pPage = parseInt(req.get('page') || '', 10);
+            const pPageSize = parseInt(req.get('pageSize') || '', 10);
 
-        if (isNaN(pPage) || isNaN(pPageSize) || pPage < 1 || pPageSize < 1) {
-            res.status(400).send('Parâmetros inválidos ou faltantes.');
+            if (isNaN(pPage) || isNaN(pPageSize) || pPage < 1 || pPageSize < 1) {
+                res.status(400).send('Parâmetros inválidos ou faltantes.');
+            }
+
+            const events = await getEventsByPage(pPage, pPageSize);
+            console.log(events);
+            res.status(200).json(events);
+        } catch (error) {
+            console.error('Erro em getEventsByPageHandler:', error);
+            res.status(500).send('Erro interno ao processar a solicitação.');
         }
-
-        const events = await getEventsByPage(pPage, pPageSize);
-
-        res.status(200).json(events.rows);
-    } catch (error) {
-        console.error('Erro em getEventsByPageHandler:', error);
-        res.status(500).send('Erro interno ao processar a solicitação.');
     }
-};
 
     export const betOnEventsHandler: RequestHandler = async (req : Request, res : Response) => {
         const pToken = req.get('Authorization');

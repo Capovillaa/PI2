@@ -36,28 +36,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <label for="filterCategory" class="form-label">Filtrar por Categoria:</label>
-                <select class="form-select" id="filterCategory">
-                    <option value="">Todas</option>
-                    <option value="Futebol">Futebol</option>
-                    <option value="E-Sports">E-Sports</option>
-                    <option value="Basquete">Basquete</option>
-                    <option value="Política">Política</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="sortByDate" class="form-label">Ordenar por:</label>
-                <select class="form-select" id="sortByDate">
-                    <option value="select" selected>Selecione</option>
-                    <option value="date">Data mais próxima</option>
-                    <option value="popularity">Mais apostados</option>
-                </select>
-            </div>
-        </div>
-        
         <div id="mainContent" class="container-fluid" style="padding-top: 20px;">
             <div class="row">
                 <div class="col">
@@ -79,6 +57,26 @@
                      <i class="fas fa-plus"></i></button>
                 </div>
             </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <label for="filterCategory" class="form-label">Filtrar por Categoria:</label>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">Todas</option>
+                        <option value="Futebol">Futebol</option>
+                        <option value="E-Sports">E-Sports</option>
+                        <option value="Basquete">Basquete</option>
+                        <option value="Política">Política</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="sortByDate" class="form-label">Ordenar por:</label>
+                    <select class="form-select" id="sortByDate">
+                        <option value="select" selected>Selecione</option>
+                        <option value="date">Data mais próxima</option>
+                        <option value="popularity">Mais apostados</option>
+                    </select>
+                </div>
+            </div>
             <div class="row align-items-center">
                 <div class="col">
                     <table id="tableEvents" class="tableEvents">
@@ -86,6 +84,7 @@
                             <tr>
                                 <th scope="col" class="text-left">Título</th>
                                 <th scope="col" class="text-left">Descrição</th>
+                                <th scope="col" class="text-left">Quantidade de apostas</th>
                                 <th scope="col" class="text-left">Data do evento</th>
                                 <th scope="col" class="text-end">Valor da cota</th>
                                 <th scope="col" class="text-left">Categoria</th>
@@ -326,7 +325,8 @@
                     <tr id="${event.ID_EVT}">
                         <td class="text-left">${event.TITULO}</td>
                         <td class="text-left">${event.DESCRICAO}</td>
-                        <td class="text-left">${event.DATA_EVT}</td> <!-- Usando o campo DATA_EVT -->
+                        <td class="text-left">${event.betsQtty}</td>
+                        <td class="text-left">${event.DATA_EVT}</td>
                         <td class="text-end">${price.toFixed(2).replace('.',',')}</td>
                         <td class="text-left">${event.CATEGORIA}</td>
                         <td>
@@ -481,6 +481,7 @@
 
                 if (pToken && pIdEvento && pQtdCotas && pEscolha && pEscolha !== "Selecione sua escolha") {
                     await requestBetOnEvent(pToken, pIdEvento, pQtdCotas, pEscolha);
+                    await requestEvents(page);
                 } else {
                     alert('Preencha todos os campos corretamente.');
                 }
@@ -564,50 +565,46 @@
                 window.location.href = "login.html";
             }
 
-    // Função para aplicar filtros
-    function applyFilters() {
-    const category = document.getElementById("filterCategory").value;
-    const sortBy = document.getElementById("sortByDate").value;
+            // Função para aplicar filtros
+            function applyFilters() {
+                const category = document.getElementById("filterCategory").value;
+                const sortBy = document.getElementById("sortByDate").value;
 
-    // Filtrar por categoria
-    let filteredEvents = allEvents; // Use a lista global de eventos
-    if (category && category !== "all") {
-        filteredEvents = filteredEvents.filter(event => event.CATEGORIA === category);
-    }
+                // Filtrar por categoria
+                let filteredEvents = allEvents; // Use a lista global de eventos
+                if (category && category !== "all") {
+                    filteredEvents = filteredEvents.filter(event => event.CATEGORIA === category);
+                }
 
-    // Ordenar por data ou popularidade
-    if (sortBy === "date") {
-        filteredEvents.sort((a, b) => new Date(a.DATA_EVT) - new Date(b.DATA_EVT));
-    } else if (sortBy === "popularity") {
-        filteredEvents.sort((a, b) => b.APOSTAS - a.APOSTAS); // Adapte se "APOSTAS" existir
-    }
+                // Ordenar por data ou popularidade
+                if (sortBy === "date") {
+                    filteredEvents.sort((a, b) => new Date(a.DATA_EVT) - new Date(b.DATA_EVT));
+                } else if (sortBy === "popularity") {
+                    // Ordena os eventos pela quantidade de apostas (betsQtty)
+                    filteredEvents.sort((a, b) => b.betsQtty - a.betsQtty); // Ordenação decrescente para mais apostas
+                }
 
-    // Renderizar os eventos filtrados
-    fillTableWithEvents(filteredEvents);
-}
+                // Renderizar os eventos filtrados
+                fillTableWithEvents(filteredEvents);
+            }
 
+            // Adicionar eventos de filtro e ordenação
+            document.getElementById("filterCategory").addEventListener("change", applyFilters);
+            document.getElementById("sortByDate").addEventListener("change", applyFilters);
 
-    // Adicionar eventos de filtro e ordenação
-    document.getElementById("filterCategory").addEventListener("change", applyFilters);
-    document.getElementById("sortByDate").addEventListener("change", applyFilters);
-
-    // Renderizar eventos iniciais
-    document.addEventListener("DOMContentLoaded", () => {
-        renderEvents(events);
-    });
-    document.addEventListener('readystatechange', event => {
-    if(event.target.readyState === "complete") {
-        requestNumberOfEvents();
-        requestEvents(page).then(() => {
-            fillTableWithEvents(allEvents); // Exibe os eventos carregados
+            document.addEventListener('readystatechange', event => {
+            if(event.target.readyState === "complete") {
+                requestNumberOfEvents();
+                requestEvents(page).then(() => {
+                    fillTableWithEvents(allEvents); // Exibe os eventos carregados
+                });
+            }
         });
-    }
-});
-    function resetFilters() {
-        document.getElementById("filterCategory").value = "all";
-        document.getElementById("sortByDate").value = "";
-        fillTableWithEvents(allEvents); // Mostra todos os eventos
-    }
+            function resetFilters() {
+                document.getElementById("filterCategory").value = "all";
+                document.getElementById("sortByDate").value = "";
+                fillTableWithEvents(allEvents); // Mostra todos os eventos
+            }
 
         </script>
     </body>
