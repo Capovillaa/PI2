@@ -37,6 +37,26 @@
             </div>
         </div>
 
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <label for="filterCategory" class="form-label">Filtrar por Categoria:</label>
+                <select class="form-select" id="filterCategory">
+                    <option value="">Todas</option>
+                    <option value="Futebol">Futebol</option>
+                    <option value="E-Sports">E-Sports</option>
+                    <option value="Basquete">Basquete</option>
+                    <option value="Política">Política</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="sortByDate" class="form-label">Ordenar por:</label>
+                <select class="form-select" id="sortByDate">
+                    <option value="date">Data mais próxima</option>
+                    <option value="popularity">Mais apostados</option>
+                </select>
+            </div>
+        </div>
+        
         <div id="mainContent" class="container-fluid" style="padding-top: 20px;">
             <div class="row">
                 <div class="col">
@@ -193,6 +213,7 @@
             </div>
             </div>
         </div>
+    </body>
         <script 
          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
          integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
@@ -542,6 +563,92 @@
                 window.location.href = "login.html";
             }
 
+             // Eventos de exemplo para simulação
+    let events = [
+        {
+            id: 1,
+            title: "Botafogo X Atlético Mineiro",
+            description: "Final da Libertadores",
+            date: "2024-11-30",
+            odds: 5.0,
+            category: "Futebol",
+            bets: 200
+        },
+        {
+            id: 2,
+            title: "Eleição Presidencial",
+            description: "Previsão do vencedor",
+            date: "2024-12-01",
+            odds: 1.8,
+            category: "Política",
+            bets: 500
+        },
+        {
+            id: 3,
+            title: "CS:GO Major",
+            description: "Vencedor do campeonato",
+            date: "2024-11-29",
+            odds: 3.2,
+            category: "E-Sports",
+            bets: 300
+        }
+    ];
+
+    // Função para renderizar eventos na tabela
+    function renderEvents(filteredEvents) {
+        const tbody = document.querySelector("#tableEvents tbody");
+        tbody.innerHTML = "";
+
+        filteredEvents.forEach(event => {
+            const row = `
+                <tr id="${event.id}">
+                    <td class="text-left">${event.title}</td>
+                    <td class="text-left">${event.description}</td>
+                    <td class="text-left">${event.date}</td>
+                    <td class="text-end">${event.odds.toFixed(2)}</td>
+                    <td class="text-left">${event.category}</td>
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary" 
+                                data-bs-toggle="modal" data-bs-target="#betOnEventModal">
+                            Apostar
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Função para aplicar filtros
+    function applyFilters() {
+        const category = document.getElementById("filterCategory").value;
+        const sortBy = document.getElementById("sortByDate").value;
+
+        // Filtrar por categoria
+        let filteredEvents = events;
+        if (category) {
+            filteredEvents = filteredEvents.filter(event => event.category === category);
+        }
+
+        // Ordenar por data ou mais apostados
+        if (sortBy === "date") {
+            filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+        } else if (sortBy === "popularity") {
+            filteredEvents.sort((a, b) => b.bets - a.bets);
+        }
+
+        // Renderizar os eventos filtrados
+        renderEvents(filteredEvents);
+    }
+
+    // Adicionar eventos de filtro e ordenação
+    document.getElementById("filterCategory").addEventListener("change", applyFilters);
+    document.getElementById("sortByDate").addEventListener("change", applyFilters);
+
+    // Renderizar eventos iniciais
+    document.addEventListener("DOMContentLoaded", () => {
+        renderEvents(events);
+    });
         </script>
     </body>
 </html>

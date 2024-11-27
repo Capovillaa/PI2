@@ -176,14 +176,14 @@
                     }
                 }
 
-        async function requestAddFunds(token, valor) {
+        async function requestWithdrawFunds(token, valor) {
             try {
                 const h = new Headers();
                 h.append("Content-Type", "application/json");
 
                 h.append("Authorization", token);
                 h.append("valor", valor);
-                const resAddFunds = await fetch("http://127.0.0.1:3000/addFunds", {
+                const resWithdrawFunds = await fetch("http://127.0.0.1:3000/withdrawFunds", {
                     method: "POST",
                     headers: h,
                 })
@@ -212,7 +212,7 @@
 
         async function submitWithdraw() {
             const pToken = sessionStorage.getItem("authToken");
-            const pValor = parseFloat(document.getElementById("valorSaque").value);
+            const pValor = parseFloat(document.getElementById("valorSaque").value); 
             
             if (document.getElementById('pixOption').checked) {
                 const pPix = document.getElementById("chavePix").value;
