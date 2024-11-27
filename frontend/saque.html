@@ -84,6 +84,7 @@
                         placeholder="Exemplo: 56789-0" 
                         maxlength="8" 
                         pattern="\d{5}-\d" 
+                        oninput="formatAccount(event)"
                         title="Insira no formato 56789-0." 
                         required>
                 </div>
@@ -96,15 +97,14 @@
                         style="padding: 5px; font-size: 14px;" 
                         placeholder="Exemplo: 123.456.789-00" 
                         maxlength="14" 
-                        pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" 
+                        pattern="\d{3}\.\d{3}\.\d{3}-\d{2}"
+                        oninput="formatCPF(event)"
                         title="Insira no formato 123.456.789-00." 
                         required>
-                </div>
+                </div>                
                 
             </form>
         </div>
-
-        <!-- Valor do Saque -->
         <div>
             <label for="valorSaque" class="form-label" style="font-size: 15px;">Informe o valor que deseja sacar:</label>
             <input 
@@ -116,14 +116,15 @@
                 max="101000" 
                 required>
         </div>
-
-        <!-- Botões -->
         <div class="d-grid mt-4">
-            <button type="button" class="btn btn-primary" onclick="submitWithdraw()">Confirmar Saque</button>
+            <button type="button" class="btn btn-primary" onclick="withdrawFunds()">Confirmar Saque</button>
         </div>
         <div class="d-flex justify-content-center mt-3">
             <a href="wallet.html" class="btn btn-success-orange">Voltar</a>
         </div>
+        <div id="messagebox">
+            <p id="message"></p>
+        </div>  
     </div>
 
 <script 
@@ -132,8 +133,23 @@
         crossorigin="anonymous">
     </script>
     <script>
+
+        const mb = document.getElementById("messagebox");
+        function showErrorMessage(content) {
+            document.getElementById("message").innerHTML = content;
+            mb.className = "messagebox error";  
+            mb.style.display = "block";  
+        }
         
-        function formatAccount(input) {
+
+        function showSuccessMessage(content) {
+            document.getElementById("message").innerHTML = content;
+            mb.className = "messagebox success";  
+            mb.style.display = "block";  
+        }
+        
+        function formatAccount(event) {
+            let input = event.target;
             let value = input.value.replace(/\D/g, ''); 
             if (value.length > 5) {
                 value = value.substring(0, 5) + '-' + value.substring(5, 6); 
@@ -141,7 +157,8 @@
             input.value = value;
         }
 
-        function formatCPF(input) {
+        function formatCPF(event) {
+            let input = event.target;
             let value = input.value.replace(/\D/g, ''); 
             if (value.length > 3 && value.length <= 6) {
                 value = value.substring(0, 3) + '.' + value.substring(3, 6);
@@ -154,25 +171,25 @@
         }
 
         async function withdrawFunds() {
-                    event.preventDefault();
-                    const pToken = sessionStorage.getItem("authToken");
-                    var pValor = parseFloat(document.getElementById("valorSaque").value);
-                    var pPix = document.getElementById("pix").value;
-                    var pAgencia = parseInt(document.getElementById("agencia").value);
-                    var pConta = document.getElementById("conta").value;
-                    var pCPF = parseInt(document.getElementById("cpf").value);
-                    console.log(pToken);
-                    console.log(pValor);
-                    console.log(pPix);
-                    console.log(pAgencia);
-                    console.log(pConta);
-                    console.log(pCPF);
-                    if(pToken && pValor && pAgencia && pConta && pCPF || pToken && pValor && pPix){
-                        await requestAddFunds(pToken, pValor);
-                    }else{
-                        alert('Preencha todos os campos corretamente.');
-                    }
-                }
+            event.preventDefault();
+            const pToken = sessionStorage.getItem("authToken");
+            var pValor = parseFloat(document.getElementById("valorSaque").value);
+            var pPix = document.getElementById("chavePix").value;
+            var pAgencia = parseInt(document.getElementById("agencia").value);
+            var pConta = document.getElementById("conta").value;
+            var pCPF = parseInt(document.getElementById("cpf").value);
+            console.log(pToken);
+            console.log(pValor);
+            console.log(pPix);
+            console.log(pAgencia);
+            console.log(pConta);
+            console.log(pCPF);
+            if(pToken && pValor && pAgencia && pConta && pCPF || pToken && pValor && pPix){
+                await requestWithdrawFunds(pToken, pValor);
+            }else{
+                alert('Preencha todos os campos corretamente.');
+            }
+        }
 
         async function requestWithdrawFunds(token, valor) {
             try {
@@ -187,26 +204,30 @@
                 })
 
                 if(resWithdrawFunds.ok){
-                    console.log("Saque efetuado.");
-                    window.location.href = "wallet.html";
+                    const valorSacado = await resWithdrawFunds.json();
+                    showSuccessMessage(`Saque de R$ ${valorSacado} realizado com sucesso!`);
+                    setTimeout(() => {
+                        window.location.href = "wallet.html";
+                    }, 2000);
                 } else {
                     const errorText = await resSignUp.text();
-                    console.error("Erro ao sacar",errorText);
+                    console.error("Erro ao sacar: ",errorText);
                     showErrorMessage('Erro ao sacar.');
                 }
             } catch(error){
                     console.log("Erro na requisição:",error);
             }
         }
-            function toggleMethod(method) {
-                if (method === 'pix') {
-                    document.getElementById('pixFields').style.display = 'block';
-                    document.getElementById('bankFields').style.display = 'none';
-                } else {
-                    document.getElementById('pixFields').style.display = 'none';
-                    document.getElementById('bankFields').style.display = 'block';
-                }
+
+        function toggleMethod(method) {
+            if (method === 'pix') {
+                document.getElementById('pixFields').style.display = 'block';
+                document.getElementById('bankFields').style.display = 'none';
+            } else {
+                document.getElementById('pixFields').style.display = 'none';
+                document.getElementById('bankFields').style.display = 'block';
             }
+        }
 
         async function submitWithdraw() {
             const pToken = sessionStorage.getItem("authToken");

@@ -80,7 +80,7 @@
                 </div>
                 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary" onclick="addFunds()" style="font-size: 20px;">Confirmar Depósito</button>
+                    <button type="submit" class="btn btn-primary" style="font-size: 20px;" id="addFundsButton">Confirmar Depósito</button>
                 </div>
             </form>
         
@@ -120,7 +120,7 @@
             event.preventDefault();
             const valor = document.getElementById("valorDeposito").value;
             const messageBox = document.getElementById("messagebox");
-            if (valor >= 1 && valor <= 100000) {
+            if (valor >= 1 && valor <= 1000000) {
                 showSuccessMessage(`Depósito de R$ ${valor} realizado com sucesso!`);
                
             } else {
@@ -151,12 +151,9 @@
             console.log(pToken, pValor, pCartao, pCvv, pDataValidade);
 
             if (pToken && pValor && pCartao && pCvv && pDataValidade) {
+                document.getElementById("addFundsButton").disabled = true;
                 const success = await requestAddFunds(pToken, pValor, pCartao, pCvv, pDataValidade);
-                if (success) {
-                    showSuccessMessage(`Depósito de R$ ${pValor} realizado com sucesso!`);
-                } else {
-                    showErrorMessage("Erro ao adicionar fundos.");
-                }
+                document.getElementById("addFundsButton").disabled = false;
             } else {
                 showErrorMessage("Preencha todos os campos corretamente.");
             }
@@ -179,7 +176,10 @@
 
                 if(resAddFunds.ok){
                     console.log("Saldo adicionado à conta.");
-                    window.location.href = "wallet.html";
+                    showSuccessMessage(`Depósito de R$ ${valor} realizado com sucesso!`);
+                    setTimeout(() => {
+                        window.location.href = "wallet.html";
+                    }, 2000);
                 } else {
                     const errorText = await resSignUp.text();
                     console.error("Erro ao adicionar fundos",errorText);
@@ -189,6 +189,11 @@
                     console.log("Erro na requisição:",error);
             }
         }
+
+        document.getElementById("addFundsButton").addEventListener("click", function(event) {
+            event.preventDefault();
+            addFunds(event);
+        });
 
     </script>
 </body>

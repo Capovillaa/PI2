@@ -180,7 +180,7 @@ export namespace FinancialManager{
         }
     }
 
-    async function withdrawFunds(email: string, senha: string, contaBancaria: number, valor: number): Promise<number> {
+    async function withdrawFunds(token: string, valor: number): Promise<number> {
         OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
         let connection;
 
@@ -191,76 +191,62 @@ export namespace FinancialManager{
                 connectString: process.env.ORACLE_CONN_STR
             });
 
-            interface Account {
-                EMAIL: string;
-                SENHA: string;
-                FK_ID_CRT: number;
-            }
-
-            interface balanceResult {
-                SALDO: number;
-            }
-
             let valorTaxado: number = 0;
 
-            let Authentication = await connection.execute(
-                'SELECT EMAIL, SENHA, FK_ID_CRT FROM ACCOUNTS WHERE EMAIL = :email',
-                {email}
+            let result = await connection.execute<UserAccount>(
+                `SELECT *
+                 FROM ACCOUNTS
+                 WHERE TOKEN = :token`,
+                {token}
             );
 
-            if (Authentication.rows && Authentication.rows.length > 0){
-                const account = Authentication.rows[0] as unknown as Account;  
-                const SenhaCriptografada = account.SENHA;
+            let User = result.rows && result.rows[0] ? result.rows[0] : null;
 
-                const isPasswordValid = await bcrypt.compare(senha, SenhaCriptografada);
+            let idCrt = User?.FK_ID_CRT;
 
-                if (isPasswordValid){
-                    let idCrt = account.FK_ID_CRT;
+            let resultWallet = await connection.execute<Wallet>(
+                `SELECT *
+                 FROM WALLETS
+                 WHERE ID_CRT = :idCrt`,
+                {idCrt}
+            );
 
-                    let resultBalance = await connection.execute<balanceResult>(
-                        `SELECT SALDO
-                         FROM WALLETS
-                         WHERE ID_CRT = :idCrt`,
-                         {idCrt}
-                    )
+            let Wallet = resultWallet.rows && resultWallet.rows[0] ? resultWallet.rows[0] : null;
 
-                    let balance = resultBalance.rows?.[0]?.SALDO;
-                    if (balance === undefined || balance === null) {
-                        throw new Error("Não existe nenhum usuário com este email.");
-                    }
+            let balance = Wallet?.SALDO;
 
-                    if (valor > balance){
-                        throw new Error("Saldo em conta é menor que o valor que se deseja sacar.");
-                    }
-
-                    if (valor <= 100){
-                        valorTaxado = valor - (valor / 25);
-                    } else if (valor <= 1000){
-                        valorTaxado = valor - (valor / 100 * 3);
-                    } else if (valor <= 5000){
-                        valorTaxado = valor - (valor / 50);
-                    } else if (valor <= 100000){
-                        valorTaxado = valor - (valor / 100);
-                    } else {
-                        valorTaxado = valor;
-                    }
-
-                    balance -= valor;
-
-                    let update = await connection.execute(
-                        `UPDATE WALLETS
-                         SET SALDO = :balance
-                         WHERE ID_CRT = :idCrt`,
-                        {balance, idCrt},
-                        {autoCommit: false}
-                    )
-
-                    await connection.commit();
-                    console.log("Resultados da atualização: ", update);
-                }
-            } else {
-                throw new Error("Não existe nenhum usuário com este email.");
+            if (balance === undefined || balance === null) {
+                throw new Error("Sem saldo na conta.");
             }
+
+            if (valor > balance){
+                throw new Error("Saldo em conta é menor que o valor que se deseja sacar.");
+            }
+
+            if (valor <= 100){
+                valorTaxado = valor - (valor / 25);
+            } else if (valor <= 1000){
+                valorTaxado = valor - (valor / 100 * 3);
+            } else if (valor <= 5000){
+                valorTaxado = valor - (valor / 50);
+            } else if (valor <= 100000){
+                valorTaxado = valor - (valor / 100);
+            } else {
+                valorTaxado = valor;
+            }
+
+            balance -= valor;
+
+            let update = await connection.execute(
+                `UPDATE WALLETS
+                 SET SALDO = :balance
+                 WHERE ID_CRT = :idCrt`,
+                {balance, idCrt},
+                {autoCommit: false}
+            )
+
+            await connection.commit();
+            console.log("Resultados da atualização: ", update);
 
             return valorTaxado;
 
@@ -319,20 +305,16 @@ export namespace FinancialManager{
             res.statusCode = 400;
             res.send('Parâmetros inválidos ou faltantes.');
         }
-
     }
 
     export const withdrawFundsHandler:RequestHandler = async (req:Request, res:Response) => {
-        const pEmail = req.get('email');
-        const pSenha = req.get('senha');
-        const pContaBancaria = Number(req.get('contaBancaria'));
+        const pToken = req.get('Authorization');
         const pValor = Number(req.get('valor'));
-        if (pEmail && pSenha && !isNaN(pContaBancaria) && !isNaN(pValor)){
+        if (pToken && !isNaN(pValor)){
             if (pValor > 0){
                 try {
-                    const valorSacado = await withdrawFunds(pEmail, pSenha, pContaBancaria, pValor);
-                    res.statusCode = 200;
-                    res.send(`Valor depositado na conta ${pContaBancaria} após a taxação: ${valorSacado}.`);
+                    const valorSacado = await withdrawFunds(pToken, pValor);
+                    res.status(200).json(valorSacado);
                 } catch (error) {
                     res.statusCode = 500;
                     res.send('Erro ao tentar sacar o dinheiro. Tente novamente.');
