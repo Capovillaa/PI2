@@ -113,7 +113,10 @@ body {
     background-color:#6781a5; 
     color: #fae5ca; 
     }
+    
 }
+
+
 
 /*TABELAS*/
 .tableEvents {
@@ -237,11 +240,18 @@ h3 {
     background-color: #e06a00; 
 }
 
+.buttonLogout {
+    position: absolute; 
+    right: 10px;
+}
+
 .buttonPUCBets {
+    all: unset;
     font-size: 2em; 
 }
 .pucBetsButton .puc {
     color: #ff7d00;
+    background-color: transparent;
 }
 
 .pucBetsButton .bets {

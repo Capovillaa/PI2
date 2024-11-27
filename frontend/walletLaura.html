@@ -17,36 +17,37 @@
         crossorigin="anonymous">
     <link href="base.css" rel="stylesheet"/>
 </head>
-<body class="bodyForms">
-    <div class="top-rectangle">
-        <button type="button" class="buttonPUCBets" id="PUCBetsButton">
-            <span class="puc">PUC</span><span class="bets">Bets</span>
-        </button>
-        <button class="btn btn-light darkblue buttonLogout" id="logoutButton" onclick="logout()">Logout</button>
-    </div>
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <!-- Botão estilizado PUC Bets -->
+            <button type="button" class="btn btn-primary" id="PUCBetsButton">
+                <span class="puc">PUC</span><span class="bets">Bets</span>
+            </button>
+            <button class="btn btn-secondary" id="logoutButton" onclick="logout()">Logout</button>
+        </div>
+    </nav>
 
-    <div class="rectangleForms" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); ">
-        <div class="container" style="padding-top: 40px; max-width: 500px; color: #fae5ca ;">
-            <form id="walletform">
-                <h1 class="text-center">Minha Carteira</h1>
-            </form>
+    <div class="container" style="padding-top: 40px; max-width: 500px;">
+        <form id="walletform">
+            <h1 class="text-center">Minha Carteira</h1>
+        </form>
+        <br>
+        
+        <div class="card-body">
+            <h2 class="text-center">Saldo: 
+                <span id="wallet-balance" class="fw-bold text-success"></span>
+            </h2>
             <br>
             
-            
-                <h2>Saldo: 
-                    <span id="wallet-balance" class="fw-bold text-success"></span>
-                </h2>
-                <br>
-                
-                <div class="d-flex justify-content-center gap-3 mt-3">
-                    <a href="deposito.html" class="btn btn-success">Depósito</a>
-                    <a href="saque.html" class="btn btn-danger">Saque</a>
-                </div>
-                <br>
-                <div class="d-flex justify-content-center mt-3">
-                    <a href="historico.html" class="btn btn-secondary">Histórico de Transações e Apostas</a>
-                </div>
-            
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <a href="deposito.html" class="btn btn-success">Depósito</a>
+                <a href="saque.html" class="btn btn-danger">Saque</a>
+            </div>
+            <br>
+            <div class="d-flex justify-content-center mt-3">
+                <a href="historico.html" class="btn btn-secondary">Histórico de Transações e Apostas</a>
+            </div>
         </div>
     </div>
 
