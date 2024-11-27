@@ -16,6 +16,97 @@
     <link href="base.css" rel="stylesheet" />
 </head>
 
+    <body class="bodyOpaco" onload="getSaldo()">
+        <div class="top-rectangle">
+            <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
+            <div class="right-controls">
+                <a href="wallet.html" class="buttonWallet"><h5>Minha Carteira</h5></a>
+                <input class="inputSaldo" type="text" id="saldo"
+                placeholder="" aria-label="Saldo" disabled>
+            </div>
+        </div>
+
+        <div id="loadingSpinner" class="container" style="display: none;">
+            <div id="loading" class="d-flex justify-content-center" style="padding-top: 20px;">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Carregando...</span>
+                </div>
+            </div>
+        </div>
+        <div id="mainContent" class="container-fluid" style="padding-top: 20px;">
+            <div class="row">
+                <div class="col">
+                    <h2 class="darkblue" style="font-weight: bold">Eventos</h2>
+                </div>
+                <div class="col-md-auto">
+                    <div class="input-group">
+                        <input class="inputPesquisa" type="text" 
+                            placeholder="Buscar evento..." id="inputPesquisa">
+                        <button type="button" class="buttonPlus" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>                
+                <div class="col col-lg-1">
+                    <button type="button" class="buttonPlusEvent"
+                     style="float:right;" data-bs-toggle="modal"
+                     data-bs-target="#addNewEventModal">
+                     <i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <label for="filterCategory" class="form-label borda-texto" style="font-weight: bold">Filtrar por Categoria:</label>
+                    <select class="form-select inputFiltro" id="filterCategory">
+                        <option value="">Todas</option>
+                        <option value="Futebol">Futebol</option>
+                        <option value="E-Sports">E-Sports</option>
+                        <option value="Basquete">Basquete</option>
+                        <option value="Política">Política</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="sortByDate" class="form-label borda-texto" style="font-weight: bold">Ordenar por:</label>
+                    <select class="form-select inputFiltro" id="sortByDate">
+                        <option value="select" selected>Selecione</option>
+                        <option value="date">Data mais próxima</option>
+                        <option value="popularity">Mais apostados</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col">
+                    <table id="tableEvents" class="tableEvents">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-left">Título</th>
+                                <th scope="col" class="text-left">Descrição</th>
+                                <th scope="col" class="text-left">Quantidade de apostas</th>
+                                <th scope="col" class="text-left">Data do evento</th>
+                                <th scope="col" class="text-end">Valor da cota</th>
+                                <th scope="col" class="text-left">Categoria</th>
+                                <th scope="col" class="text-left">Apostar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--
+                            <tr id="${event.ID}">
+                                <td class="text-left">Botafogo X Atlético Mineiro</td>
+                                <td class="text-left">O Botafogo irá vencer a final contra o Atlético Mineiro e será campeão da Libertadores da América?</td>
+                                <td class="text-left">30/11/2024</td>
+                                <td class="text-end">5,00</td>
+                                <td class="text-left">Futebol</td>
+                                <td type="button" class="btn btn-outline-secondary"
+                                 style="float:right;" data-bs-toggle="modal"
+                                 data-bs-target="#addNewEventModal">
+                                 <i class="fas fa-plus"></i> Apostar</button>
+                            </tr>
+                            -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
 <body class="bodyForms">
     <div class="top-rectangle">
         <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
