@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Histórico - PUC BET</title>
+    <title>Histórico - PUC BETS</title>
     
     <link 
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -19,82 +19,74 @@
 
 </head>
 <body class="bodyOpaco">
-    <div class="top-rectangle">
-        <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
+    <div id="loadingSpinner" style="display: none;">
+        <p>Carregando...</p>
     </div>
-
+    <div id="mainContent">
+        <div class="top-rectangle">
+            <h1> <span class="puc">PUC</span><span class="bets">Bets</span> </h1>
+        </div>
     
-    <div class="container" style="padding-top: 40px; max-width: 800px;">
-        <form id="historyform">
-            <h1 class="text-center darkblue" style="font-weight: bold">Histórico</h1>
-        </form>
-    </div>
-
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-6">
-                <h2 class="text-center darkblue" style="font-weight: bold">Transações</h2>
-                <table class="tableEvents">
-                    <thead class="tableEvents th">
-                        <tr>
-                            <th>#</th>
-                            <th>Ação</th>
-                            <th>Valor</th>
-                            <th>Data</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Depósito</td>
-                            <td>R$ 100,00</td>
-                            <td>24/11/2024</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Saque</td>
-                            <td>R$ 50,00</td>
-                            <td>22/11/2024</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        
+        <div class="container" style="padding-top: 40px; max-width: 800px;">
+            <form id="historyform">
+                <h1 class="text-center darkblue" style="font-weight: bold">Histórico</h1>
+            </form>
+        </div>
     
-            <div class="col-md-6">
-                <h2 class="text-center darkblue" style="font-weight: bold">Apostas</h2>
-                <table class="tableEvents">
-                    <thead class="tableEvents th">
-                        <tr>
-                            <th>#</th>
-                            <th>Evento</th>
-                            <th>Aposta</th>
-                            <th>Data</th>
-                            <th>Resultado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Jogo A</td>
-                            <td>R$ 20,00</td>
-                            <td>23/11/2024</td>
-                            <td>Vitória</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Jogo B</td>
-                            <td>R$ 30,00</td>
-                            <td>21/11/2024</td>
-                            <td>Derrota</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="container mt-5">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2 class="text-center darkblue" style="font-weight: bold">Transações</h2>
+                    <table class="tableEvents" id="tableTransactions">
+                        <thead class="tableEvents th">
+                            <tr>
+                                <th scope="col" class="text-left">#</th>
+                                <th scope="col" class="text-left">Tipo</th>
+                                <th scope="col" class="text-end">Valor</th>
+                                <th scope="col" class="text-left">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Conteúdo dinâmico será inserido aqui -->
+                        </tbody>
+                    </table>
+                    <div class="row">
+                        <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
+                            <ul id="ulPaginator" class="pagination pagination-sm">
+                                 
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                
+                <!-- Seção de Apostas -->
+                <div class="col-md-6">
+                    <h2 class="text-center darkblue" style="font-weight: bold">Apostas</h2>
+                    <table class="tableEvents" id="tableBets">
+                        <thead class="tableEvents th">
+                            <tr>
+                                <th scope="col" class="text-left">#</th>
+                                <th scope="col" class="text-left">Id Evento</th>
+                                <th scope="col" class="text-left">Quantidade de Cotas</th>
+                                <th scope="col" class="text-left">Escolha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Conteúdo dinâmico será inserido aqui -->
+                        </tbody>
+                    </table>
+                    <div class="row">
+                        <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
+                            <ul id="ulPaginatorBets" class="pagination pagination-sm">
+                                 
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
-
-   
     <div class="d-flex justify-content-center mt-4">
         <a href="wallet.html" class="btn btn-success-orange">Voltar</a>
     </div>
@@ -104,6 +96,226 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
         crossorigin="anonymous">
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            requestNumberOfTransactions();
+            requestTransactions(page);
+            requestNumberOfBets();  // Novo método para apostas
+            requestBets(page); // Novo método para apostas
+        });
+
+        let numPages = 0;
+        const pageSize = 100;
+        var page = 1;
+
+        // Função para buscar o número de transações
+        async function requestNumberOfTransactions() {
+            const pToken = sessionStorage.getItem("authToken");
+            try {
+                document.getElementById("loadingSpinner").style.display = "block";
+                document.getElementById("mainContent").style.display = "none";
+
+                const h = new Headers();
+                h.append("Content-Type", "application/json");
+                h.append("Authorization", pToken);
+
+                const resQtty = await fetch("http://127.0.0.1:3000/getTransactionsQtty", {
+                    method: "GET",
+                    headers: h,
+                });
+
+                if(resQtty.ok){
+                    const qttyJson = await resQtty.json();
+                    const qtty = qttyJson[0].TRANSACTIONSQTTY;
+                    console.log(qtty);
+                    numPages = Math.ceil(qtty / pageSize);
+                }
+                else {
+                    alert('Erro ao obter o número de transações');
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.getElementById("loadingSpinner").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            }
+        }
+
+        // Função para preencher a tabela de transações
+        function fillTableWithTransactions(transactions) {
+            cleanTableRows('tableTransactions');
+
+            if (!Array.isArray(transactions) || transactions.length === 0) {
+                const emptyRow = `
+                    <tr>
+                        <td colspan="5" class="text-center">Nenhum evento encontrado.</td>
+                    </tr>`;
+                tableTransactions.getElementsByTagName('tbody')[0].insertAdjacentHTML('beforeend', emptyRow);
+                return;
+            }
+
+            transactions.forEach(addTransactionRow);
+        }
+
+        // Função para limpar as linhas da tabela
+        function cleanTableRows(tableId) {
+            const table = document.getElementById(tableId);
+            table.getElementsByTagName('tbody')[0].innerHTML = '';
+        }
+
+        // Função para buscar as transações
+        async function requestTransactions(pageNumber) {
+            const pToken = sessionStorage.getItem("authToken");
+            try {
+                document.getElementById("loadingSpinner").style.display = "block";
+                document.getElementById("mainContent").style.display = "none";
+
+                page = pageNumber;
+                const reqHeaders = new Headers();
+                reqHeaders.append("Content-Type", "application/json");
+                reqHeaders.append("Authorization", pToken);
+                reqHeaders.append("page", pageNumber);
+                reqHeaders.append("pageSize", pageSize);
+
+                const resTransactions = await fetch("http://127.0.0.1:3000/getTransactionsByPage", {
+                    method: "POST",
+                    headers: reqHeaders,
+                });
+
+                if (resTransactions.ok) {
+                    const transactionsData = await resTransactions.json();
+                    const transactions = transactionsData.rows;
+                    console.log(transactions);
+                    allTransactions = transactions; // Atualize a lista global de transações
+                    fillTableWithTransactions(transactions);
+                } else {
+                    alert('Erro ao obter transações');
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.getElementById("loadingSpinner").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            }
+        }
+
+        // Função para adicionar as linhas de transações
+        function addTransactionRow(transaction) {
+            let valor = parseFloat(transaction.VALOR);
+            const newTransactionRow = `
+                <tr id="${transaction.ID_TRS}">
+                    <td class="text-left">${transaction.ID_TRS}</td>
+                    <td class="text-left">${transaction.TIPO}</td>
+                    <td class="text-end">${valor.toFixed(2).replace('.', ',')}</td>
+                    <td class="text-left">${transaction.DATA_TRS}</td>
+                </tr>`;
+            tableTransactions.getElementsByTagName('tbody')[0].insertAdjacentHTML('beforeend', newTransactionRow);
+        }
+
+        async function requestNumberOfBets() {
+            const pToken = sessionStorage.getItem("authToken");
+            try {
+                document.getElementById("loadingSpinner").style.display = "block";
+                document.getElementById("mainContent").style.display = "none";
+
+                const h = new Headers();
+                h.append("Content-Type", "application/json");
+                h.append("Authorization", pToken);
+
+                const resQtty = await fetch("http://127.0.0.1:3000/getBetsQtty", {
+                    method: "GET",
+                    headers: h,
+                });
+
+                if(resQtty.ok){
+                    const qttyJson = await resQtty.json();
+                    const qtty = qttyJson[0].TRANSACTIONSQTTY;
+                    console.log(qtty);
+                    numPages = Math.ceil(qtty / pageSize);
+                }
+                else {
+                    alert('Erro ao obter o número de bets');
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.getElementById("loadingSpinner").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            }
+        }
+        // Função para buscar as apostas
+        async function requestBets(pageNumber) {
+            const pToken = sessionStorage.getItem("authToken");
+            try {
+                document.getElementById("loadingSpinner").style.display = "block";
+                document.getElementById("mainContent").style.display = "none";
+
+                page = pageNumber;
+                const reqHeaders = new Headers();
+                reqHeaders.append("Content-Type", "application/json");
+                reqHeaders.append("Authorization", pToken);
+                reqHeaders.append("page", pageNumber);
+                reqHeaders.append("pageSize", pageSize);
+
+                const resBets = await fetch("http://127.0.0.1:3000/getBetsByPage", {
+                    method: "POST",
+                    headers: reqHeaders,
+                });
+
+                if (resBets.ok) {
+                    const betsData = await resBets.json();
+                    const bets = betsData.rows;
+                    console.log(bets);
+                    allBets = bets; // Atualize a lista global de apostas
+                    fillTableWithBets(bets);
+                } else {
+                    alert('Erro ao obter apostas');
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.getElementById("loadingSpinner").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            }
+        }
+
+        // Função para preencher a tabela de apostas
+        function fillTableWithBets(bets) {
+            cleanTableRows('tableBets');
+
+            if (!Array.isArray(bets) || bets.length === 0) {
+                const emptyRow = `
+                    <tr>
+                        <td colspan="5" class="text-center">Nenhuma aposta encontrada.</td>
+                    </tr>`;
+                tableBets.getElementsByTagName('tbody')[0].insertAdjacentHTML('beforeend', emptyRow);
+                return;
+            }
+
+            bets.forEach(addBetRow);
+        }
+
+        // Função para adicionar as linhas de apostas
+        function addBetRow(bet) {
+            const newBetRow = `
+                <tr id="${bet.ID_APT}">
+                    <td>${bet.ID_APT}</td>
+                    <td>${bet.FK_ID_EVT}</td>
+                    <td>${bet.QTD_COTAS}</td>
+                    <td>${bet.ESCOLHA}</td>
+                </tr>`;
+            tableBets.getElementsByTagName('tbody')[0].insertAdjacentHTML('beforeend', newBetRow);
+        }
+
+        // Função para navegação entre páginas
+        async function navigatePage(selectedPage) {
+            if (selectedPage < 1 || selectedPage > numPages) return;
+
+            page = selectedPage; // Atualiza a página atual
+            await requestTransactions(page); // Recarrega os dados das transações
+            await requestBets(page); // Recarrega os dados das apostas
+        }
     </script>
 </body>
 </html>

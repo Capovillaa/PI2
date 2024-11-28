@@ -24,7 +24,8 @@ routes.post('/login', AccountsManager.loginAuthenticatorHandler);
 routes.get('/getSaldo', FinancialManager.getSaldoHandler);
 routes.post('/addFunds', FinancialManager.addFundsHandler);
 routes.post('/withdrawFunds', FinancialManager.withdrawFundsHandler);
-
+routes.get('/getTransactionsQtty',FinancialManager.getTransactionsQttyHandler);
+routes.post('/getTransactionsByPage', FinancialManager.getTransactionsByPageHandler);
 // Events
 routes.put('/addNewEvent', EventsManager.addNewEventHandler);
 routes.post('/evaluateNewEvent', EventsManager.evaluateNewEventHandler);
@@ -35,6 +36,8 @@ routes.post('/getEventsByPage', EventsManager.getEventsByPageHandler);
 routes.post('/deleteEvent', EventsManager.deleteEventsHandler);
 routes.post('/betOnEvent', EventsManager.betOnEventsHandler);
 routes.post('/finishEvent', EventsManager.finishEventHandler);
+routes.post('/getBetsByPage',EventsManager.getBetsByPageHandler);
+routes.get('/getBetsQtty',EventsManager.getBetsQttyHandler);
 
 server.use(routes);
 

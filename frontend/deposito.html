@@ -27,7 +27,6 @@
 
         <div class="container" style="padding-top: 40px; max-width: 500px;">
             <h2 class="text-center">Depósito</h2>
-            <hr>
             <form id="depositForm">
 
                 <div>
@@ -151,9 +150,7 @@
             console.log(pToken, pValor, pCartao, pCvv, pDataValidade);
 
             if (pToken && pValor && pCartao && pCvv && pDataValidade) {
-                document.getElementById("addFundsButton").disabled = true;
                 const success = await requestAddFunds(pToken, pValor, pCartao, pCvv, pDataValidade);
-                document.getElementById("addFundsButton").disabled = false;
             } else {
                 showErrorMessage("Preencha todos os campos corretamente.");
             }

@@ -173,6 +173,51 @@ export namespace FinancialManager{
             if (connection){
                 try{
                     await connection.close();
+                } catch (error) {
+                    console.error("Erro ao tentar fechar a conexão: ", error);
+                }
+            }
+        }
+    }
+
+    async function addTransaction(token: string, valor: number,tipo :string){
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection;
+
+        try{
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR
+            });
+
+            let result = await connection.execute<UserAccount>(
+                `SELECT *
+                 FROM ACCOUNTS
+                 WHERE TOKEN = :token`,
+                {token}
+            );
+
+            let User = result.rows && result.rows[0] ? result.rows[0] : null;
+
+            let fk_id_usr = User?.ID_USR;
+
+            let insertion = await connection.execute(
+                `INSERT INTO TRANSACTIONS
+                    (ID_TRS,TIPO,DATA_TRS,VALOR,FK_ID_USR)
+                VALUES
+                    (SEQ_TRANSACTIONSPK.NEXTVAL,:tipo,(SYSDATE),:valor,:fk_id_usr)`,
+                {tipo,valor,fk_id_usr},
+                {autoCommit: false}
+            );
+            await connection.commit();
+            
+        }catch(error){
+            console.error("Erro ao tentar adicionar fundos à carteira: ", error);
+        }finally {
+            if (connection){
+                try{
+                    await connection.close();
                 } catch (err) {
                     console.error("Erro ao tentar fechar a conexão: ", err);
                 }
@@ -264,6 +309,86 @@ export namespace FinancialManager{
         }
     }
 
+    async function getTransactionsQtty(token :string) : Promise<OracleDB.Result<unknown>> {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        
+        let connection = await OracleDB.getConnection({
+            user: process.env.ORACLE_USER,
+            password: process.env.ORACLE_PASSWORD,
+            connectString: process.env.ORACLE_CONN_STR
+        });
+
+        let result = await connection.execute<UserAccount>(
+            `SELECT *
+             FROM ACCOUNTS
+             WHERE TOKEN = :token`,
+            {token}
+        );
+
+        let User = result.rows && result.rows[0] ? result.rows[0] : null;
+        let fk_id_usr = User?.ID_USR;
+
+        let transactionsQtty = await connection.execute(
+            `SELECT count(ID_TRS) as transactionsQtty FROM TRANSACTIONS WHERE FK_ID_USR = :fk_id_usr`,
+            {fk_id_usr}
+        );
+
+        await connection.close();
+        return transactionsQtty;
+    }
+
+    async function getTransactionsByPage(token: string,page: number, pageSize: number) {
+        const startRecord = (page - 1) * pageSize;
+    
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection: OracleDB.Connection | null = null;
+    
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR,
+            });
+            
+            let result = await connection.execute<UserAccount>(
+                `SELECT *
+                 FROM ACCOUNTS
+                 WHERE TOKEN = :token`,
+                {token}
+            );
+
+            let User = result.rows && result.rows[0] ? result.rows[0] : null;
+            let fk_id_usr = User?.ID_USR;
+
+            // Busca eventos paginados
+            const transactionsQtty = await connection.execute(
+                `SELECT * FROM TRANSACTIONS
+                 WHERE FK_ID_USR = :fk_id_usr
+                 ORDER BY ID_TRS
+                 OFFSET :startRecord ROWS 
+                 FETCH NEXT :pageSize ROWS ONLY`,
+                { fk_id_usr,startRecord, pageSize }
+            );
+    
+            if (!transactionsQtty.rows || transactionsQtty.rows.length === 0) {
+                console.log("Nenhum dado retornado ou estrutura inválida.");
+                return [];
+            }
+    
+            // Adiciona a quantidade de apostas a cada event
+    
+            console.log(transactionsQtty); // Para verificar o resultado final
+            return transactionsQtty; // Retorna eventos com a quantidade de apostas
+        } catch (err) {
+            console.error("Erro ao buscar eventos:", err);
+            throw err;
+        } finally {
+            if (connection) {
+                await connection.close(); // Certifique-se de fechar a conexão
+            }
+        }
+    }
+
     export const getSaldoHandler:RequestHandler = async (req:Request, res:Response) => {
         const pToken = req.get("Authorization");
         if (pToken){
@@ -286,11 +411,14 @@ export namespace FinancialManager{
         const pCardNumber = Number(req.get('numero-cartao'));
         const pCvv = Number(req.get('cvv'));
         const pExpirationDate = req.get('validade');
+        const pTipo = 'deposito';
         if (pToken && !isNaN(pValor) && !isNaN(pCardNumber) && !isNaN(pCvv) && pExpirationDate){
             if(pValor > 0 && validateCardNumber(pCardNumber,pCvv,pExpirationDate)){ 
                 try {
+                    var tipo = 1;
                     await addCreditCard(pToken,pCardNumber,pCvv,pExpirationDate);
                     await addFunds(pToken,pValor);
+                    await addTransaction(pToken,pValor,pTipo);
                     res.statusCode = 200;
                     res.send('Créditos adicionados com sucesso.');
                 } catch (error) {
@@ -310,10 +438,12 @@ export namespace FinancialManager{
     export const withdrawFundsHandler:RequestHandler = async (req:Request, res:Response) => {
         const pToken = req.get('Authorization');
         const pValor = Number(req.get('valor'));
+        const pTipo = 'saque';
         if (pToken && !isNaN(pValor)){
             if (pValor > 0){
                 try {
                     const valorSacado = await withdrawFunds(pToken, pValor);
+                    await addTransaction(pToken,pValor,pTipo);
                     res.status(200).json(valorSacado);
                 } catch (error) {
                     res.statusCode = 500;
@@ -326,6 +456,44 @@ export namespace FinancialManager{
         } else {
             res.statusCode = 400;
             res.send('Parâmetros inválidos ou faltantes.');
+        }
+    }
+
+    export const getTransactionsQttyHandler:RequestHandler = async (req:Request, res:Response) => {
+        const pToken = req.get("Authorization");
+        if(pToken){
+            const transactionsQtty = await getTransactionsQtty(pToken);
+            res.statusCode = 200;
+            res.send(transactionsQtty.rows);
+        }else {
+            res.statusCode = 401;
+            res.send('Não autorizado');
+        }
+        
+    }
+
+    export const getTransactionsByPageHandler: RequestHandler = async (req: Request, res: Response) => {
+        try {
+            const pToken = req.get("Authorization");
+            const pPage = parseInt(req.get('page') || '', 10);
+            const pPageSize = parseInt(req.get('pageSize') || '', 10);
+
+            if (isNaN(pPage) || isNaN(pPageSize) || pPage < 1 || pPageSize < 1) {
+                res.status(400).send('Parâmetros inválidos ou faltantes.');
+            }
+
+            if(pToken){
+                const transactions = await getTransactionsByPage(pToken,pPage, pPageSize);
+                console.log(transactions);
+                res.status(200).json(transactions);
+            }else{
+                res.statusCode = 401;
+                res.send('Não autorizado');
+            }
+            
+        } catch (error) {
+            console.error('Erro em getTransactionsByPageHandler:', error);
+            res.status(500).send('Erro interno ao processar a solicitação.');
         }
     }
 }

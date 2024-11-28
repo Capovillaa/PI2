@@ -619,6 +619,86 @@ export namespace EventsManager{
         }
     }
 
+    async function getBetsQtty(token :string) : Promise<OracleDB.Result<unknown>> {
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        
+        let connection = await OracleDB.getConnection({
+            user: process.env.ORACLE_USER,
+            password: process.env.ORACLE_PASSWORD,
+            connectString: process.env.ORACLE_CONN_STR
+        });
+
+        let result = await connection.execute<UserAccount>(
+            `SELECT *
+             FROM ACCOUNTS
+             WHERE TOKEN = :token`,
+            {token}
+        );
+
+        let User = result.rows && result.rows[0] ? result.rows[0] : null;
+        let fk_id_usr = User?.ID_USR;
+
+        let betsQtty = await connection.execute(
+            `SELECT count(ID_APT) as betsQtty FROM BETS WHERE FK_ID_USR = :fk_id_usr`,
+            {fk_id_usr}
+        );
+
+        await connection.close();
+        return betsQtty;
+    }
+
+    async function getBetsByPage(token: string,page: number, pageSize: number) {
+        const startRecord = (page - 1) * pageSize;
+    
+        OracleDB.outFormat = OracleDB.OUT_FORMAT_OBJECT;
+        let connection: OracleDB.Connection | null = null;
+    
+        try {
+            connection = await OracleDB.getConnection({
+                user: process.env.ORACLE_USER,
+                password: process.env.ORACLE_PASSWORD,
+                connectString: process.env.ORACLE_CONN_STR,
+            });
+            
+            let result = await connection.execute<UserAccount>(
+                `SELECT *
+                 FROM ACCOUNTS
+                 WHERE TOKEN = :token`,
+                {token}
+            );
+
+            let User = result.rows && result.rows[0] ? result.rows[0] : null;
+            let fk_id_usr = User?.ID_USR;
+
+            // Busca eventos paginados
+            const betsQtty = await connection.execute(
+                `SELECT * FROM BETS
+                 WHERE FK_ID_USR = :fk_id_usr
+                 ORDER BY ID_APT
+                 OFFSET :startRecord ROWS 
+                 FETCH NEXT :pageSize ROWS ONLY`,
+                { fk_id_usr,startRecord, pageSize }
+            );
+    
+            if (!betsQtty.rows || betsQtty.rows.length === 0) {
+                console.log("Nenhum dado retornado ou estrutura inválida.");
+                return [];
+            }
+    
+            // Adiciona a quantidade de apostas a cada event
+    
+            console.log(betsQtty); // Para verificar o resultado final
+            return betsQtty; // Retorna eventos com a quantidade de apostas
+        } catch (err) {
+            console.error("Erro ao buscar bets:", err);
+            throw err;
+        } finally {
+            if (connection) {
+                await connection.close(); // Certifique-se de fechar a conexão
+            }
+        }
+    }
+
     export const addNewEventHandler:RequestHandler = async (req: Request, res:Response) => {
         const pToken = req.get('Authorization');
         const pTitulo = req.get('titulo');
@@ -794,4 +874,43 @@ export namespace EventsManager{
             res.send('Parâmetros inválidos ou faltantes.');
         }
     }
+
+    export const getBetsQttyHandler:RequestHandler = async (req:Request, res:Response) => {
+        const pToken = req.get("Authorization");
+        if(pToken){
+            const betsQtty = await getBetsQtty(pToken);
+            res.statusCode = 200;
+            res.send(betsQtty.rows);
+        }else {
+            res.statusCode = 401;
+            res.send('Não autorizado');
+        }
+        
+    }
+
+    export const getBetsByPageHandler: RequestHandler = async (req: Request, res: Response) => {
+        try {
+            const pToken = req.get("Authorization");
+            const pPage = parseInt(req.get('page') || '', 10);
+            const pPageSize = parseInt(req.get('pageSize') || '', 10);
+
+            if (isNaN(pPage) || isNaN(pPageSize) || pPage < 1 || pPageSize < 1) {
+                res.status(400).send('Parâmetros inválidos ou faltantes.');
+            }
+
+            if(pToken){
+                const bets = await getBetsByPage(pToken,pPage, pPageSize);
+                console.log(bets);
+                res.status(200).json(bets);
+            }else{
+                res.statusCode = 401;
+                res.send('Não autorizado');
+            }
+            
+        } catch (error) {
+            console.error('Erro em getBetsByPageHandler:', error);
+            res.status(500).send('Erro interno ao processar a solicitação.');
+        }
+    }
+
 }
