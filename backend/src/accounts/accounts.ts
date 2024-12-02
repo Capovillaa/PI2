@@ -24,7 +24,34 @@ export namespace AccountsManager {
 
     function validateBirthDate(birthDate: string): boolean{
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        return dateRegex.test(birthDate);
+        if(!dateRegex.test(birthDate)){
+            return false;
+        }
+
+        const [year,month,day] = birthDate.split('-').map(Number);
+        const birthDateObject = new Date(year,month - 1,day);
+
+        if (birthDateObject.getFullYear() !== year || 
+            birthDateObject.getMonth() !== month - 1 || 
+            birthDateObject.getDate() !== day
+        ) {
+            return false;
+        }
+
+        const today = new Date();
+        if(birthDateObject > today){
+            return false;
+        }
+
+        const age = today.getFullYear() - birthDateObject.getFullYear()
+
+        const isBeforeBirthdayThisYear = 
+            today.getMonth() < birthDateObject.getMonth() ||
+            (today.getMonth() === birthDateObject.getMonth() && today.getDate() < birthDateObject.getDate());
+
+        const exactAge = isBeforeBirthdayThisYear? age - 1: age;
+
+        return exactAge >= 18 && exactAge <= 100;
     }
 
     async function hashPassword(password: string) :Promise<string>{
