@@ -709,6 +709,8 @@ export namespace EventsManager{
         const pDataHoraFim = req.get('data-hora-fim');
         const pDataEvento = req.get('data-evento');
 
+        console.log(pDataEvento);
+
         if (pToken && pTitulo && pDescricao && pCategoria && !isNaN(pValorCota) && pDataHoraInicio && pDataHoraFim && pDataEvento){
             if (pValorCota >= 1){
                 try {

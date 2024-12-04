@@ -206,7 +206,7 @@ export namespace FinancialManager{
                 `INSERT INTO TRANSACTIONS
                     (ID_TRS,TIPO,DATA_TRS,VALOR,FK_ID_USR)
                 VALUES
-                    (SEQ_TRANSACTIONSPK.NEXTVAL,:tipo,(SYSDATE),:valor,:fk_id_usr)`,
+                    (SEQ_TRANSACTIONSPK.NEXTVAL,:tipo,TO_CHAR(SYSDATE, 'YYYY-MM-DD'),:valor,:fk_id_usr)`,
                 {tipo,valor,fk_id_usr},
                 {autoCommit: false}
             );
