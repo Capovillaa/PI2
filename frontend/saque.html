@@ -228,25 +228,7 @@
                 document.getElementById('bankFields').style.display = 'block';
             }
         }
-
-        async function submitWithdraw() {
-            const pToken = sessionStorage.getItem("authToken");
-            const pValor = parseFloat(document.getElementById("valorSaque").value); 
-            
-            if (document.getElementById('pixOption').checked) {
-                const pPix = document.getElementById("chavePix").value;
-                if (!pPix) return alert('Preencha a chave PIX.');
-                console.log(`PIX: ${pPix}, Valor: ${pValor}`);
-            } else {
-                const pAgencia = document.getElementById("agencia").value;
-                const pConta = document.getElementById("conta").value;
-                const pCPF = document.getElementById("cpf").value;
-                if (!pAgencia || !pConta || !pCPF) return alert('Preencha todos os campos bancários.');
-                console.log(`Conta: Agência ${pAgencia}, Conta ${pConta}, CPF ${pCPF}, Valor: ${pValor}`);
-            }
-        }
     </script>
-        
     </script>
 </body>
 </html>
